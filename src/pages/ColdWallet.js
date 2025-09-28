@@ -455,6 +455,42 @@ const TabContainer = styled.div`
   margin-bottom: 1.5rem;
   border-bottom: 1px solid ${({ theme }) => theme.colors.primary};
   position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  
+  /* Mobile improvements for better tab visibility */
+  @media (max-width: 768px) {
+    flex-wrap: nowrap;
+    gap: 0;
+    padding-bottom: 0.5rem;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    
+    /* Hide scrollbar but keep functionality */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+    
+    &::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
+    }
+    
+    /* Subtle gradient hints for scrollable content */
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 20px;
+      height: 100%;
+      background: linear-gradient(to left, rgba(0, 0, 0, 0.1), transparent);
+      pointer-events: none;
+      z-index: 1;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 1rem;
+  }
   
   &::after {
     content: "";
@@ -481,6 +517,23 @@ const TabButton = styled.button`
   position: relative;
   transition: all 0.3s ease;
   font-size: 0.8rem;
+  white-space: nowrap;
+  
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    flex: 0 0 auto;
+    min-width: 120px;
+    padding: 0.8rem 0.6rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.5px;
+  }
+  
+  @media (max-width: 480px) {
+    min-width: 100px;
+    padding: 0.7rem 0.5rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.3px;
+  }
   
   &:hover {
     color: ${({ theme }) => theme.colors.primary};

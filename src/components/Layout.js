@@ -28,12 +28,38 @@ const AppTitle = styled.h1`
 const Nav = styled.nav`
   display: flex;
   justify-content: center;
+  overflow-x: auto;
+  
+  @media (max-width: 768px) {
+    justify-content: flex-start;
+    padding: 0 0.5rem;
+    -webkit-overflow-scrolling: touch;
+    
+    /* Hide scrollbar but keep functionality */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+    
+    &::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
+    }
+  }
 `;
 
 const NavMenu = styled.ul`
   display: flex;
   list-style: none;
   gap: 1.5rem;
+  
+  @media (max-width: 768px) {
+    gap: 0.8rem;
+    padding: 0;
+    margin: 0;
+    flex-wrap: nowrap;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 0.5rem;
+  }
 `;
 
 const NavItem = styled.li`
@@ -42,6 +68,18 @@ const NavItem = styled.li`
     padding: 0.5rem 1rem;
     border-radius: 4px;
     transition: background-color 0.3s;
+    white-space: nowrap;
+    display: block;
+    
+    @media (max-width: 768px) {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.9rem;
+    }
+    
+    @media (max-width: 480px) {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
+    }
 
     &:hover {
       background-color: ${({ theme }) => theme.colors.primary}33;
@@ -58,6 +96,14 @@ const ContentContainer = styled.main`
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 1rem 0.8rem;
+  }
 `;
 
 const Footer = styled.footer`
