@@ -62,7 +62,7 @@ function App() {
   };
 
   // Render C-Cube wallet app with its original logic
-  const renderCCubeApp = () => {
+  const renderCCubeApp = (currentPath) => {
     // Handle initial security prompt for C-Cube
     if (!isSecurityPromptAcknowledged) {
       return (
@@ -77,8 +77,12 @@ function App() {
         {isWebEnvironment && <WebWarningBanner />}
         <Layout>
           {isSetup ? (
-            // Wallet is already set up, show main app
-            <ColdWallet />
+            // Wallet is already set up, show main app based on route
+            <>
+              {currentPath === '/apps/resources' && <Resources />}
+              {currentPath === '/apps/broadcast' && <Broadcast />}
+              {(currentPath === '/apps/wallet' || currentPath === '/apps') && <ColdWallet />}
+            </>
           ) : hasInitialChoice ? (
             // User has chosen create/recover, but hasn't completed setup
             <SetupWallet onSetupComplete={() => setIsSetup(true)} />
@@ -158,7 +162,12 @@ function App() {
               <Downloads onNavigate={handlePageNavigation} />
             </>
           } />
-          <Route path="/apps" element={renderCCubeApp()} />
+          {/* C-Cube wallet app routes */}
+          <Route path="/apps" element={renderCCubeApp('/apps')} />
+          <Route path="/apps/wallet" element={renderCCubeApp('/apps/wallet')} />
+          <Route path="/apps/resources" element={renderCCubeApp('/apps/resources')} />
+          <Route path="/apps/broadcast" element={renderCCubeApp('/apps/broadcast')} />
+          
           <Route path="/coming-soon" element={
             <>
               <Header currentPage="coming-soon" onNavigate={handlePageNavigation} />
@@ -166,8 +175,8 @@ function App() {
             </>
           } />
           
-          {/* C-Cube app routes (without header) */}
-          <Route path="/c-cube/*" element={renderCCubeApp()} />
+          {/* Legacy C-Cube app routes (without header) */}
+          <Route path="/c-cube/*" element={renderCCubeApp('/c-cube')} />
           
           {/* Fallback to home page */}
           <Route path="*" element={<Navigate to="/" replace />} />
