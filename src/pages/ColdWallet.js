@@ -8,6 +8,30 @@ import TokenBackupRestoreSection from '../components/TokenBackupRestoreSection';
 import Footer from '../components/Footer_New';
 import networks from '../utils/networks';
 
+// Utility function to truncate addresses and long technical strings for mobile
+const truncateAddress = (address, startChars = 6, endChars = 4) => {
+  if (!address || typeof address !== 'string') return '';
+  if (address.length <= startChars + endChars + 3) return address;
+  return `${address.substring(0, startChars)}...${address.substring(address.length - endChars)}`;
+};
+
+// Utility function to truncate long strings but preserve readability for sentences
+const truncateString = (str, maxLength = 50, isAddress = false) => {
+  if (!str || typeof str !== 'string') return '';
+  
+  // If it looks like an address (starts with 0x and has specific length), use address truncation
+  if (isAddress || (str.startsWith('0x') && str.length === 42)) {
+    return truncateAddress(str);
+  }
+  
+  // For other long strings (but not sentences with spaces), truncate
+  if (str.length > maxLength && str.indexOf(' ') === -1) {
+    return `${str.substring(0, Math.floor(maxLength * 0.6))}...${str.substring(str.length - Math.floor(maxLength * 0.3))}`;
+  }
+  
+  return str;
+};
+
 const WalletGlobalStyle = createGlobalStyle`
   html, body {
     background: #000000 !important;
@@ -301,6 +325,37 @@ const WalletAddress = styled.div`
   position: relative;
   color: ${({ theme }) => theme.colors.primary};
   overflow: hidden;
+  
+  .truncated-address {
+    display: none;
+  }
+  
+  /* Mobile responsive improvements */
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+    padding: 0.8rem;
+    line-height: 1.4;
+    
+    .full-address {
+      display: none;
+    }
+    
+    .truncated-address {
+      display: block;
+      font-size: 1rem;
+      letter-spacing: 0.5px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+    padding: 0.7rem;
+    line-height: 1.3;
+    
+    .truncated-address {
+      font-size: 0.9rem;
+    }
+  }
   
   &::before {
     content: "ADDRESS";
@@ -924,6 +979,20 @@ const PrivateKeyDisplay = styled.div`
   font-family: ${({ theme }) => theme.fonts.code};
   color: ${({ theme }) => theme.colors.danger};
   box-shadow: 0 0 10px rgba(255, 7, 58, 0.2);
+  word-break: break-all;
+  
+  /* Mobile responsive text handling */
+  @media (max-width: 768px) {
+    padding: 1rem;
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.8rem;
+    font-size: 0.7rem;
+    line-height: 1.3;
+  }
   
   &::before {
     content: "TOP SECRET";
@@ -952,6 +1021,19 @@ const MnemonicDisplay = styled.div`
   font-family: ${({ theme }) => theme.fonts.code};
   color: ${({ theme }) => theme.colors.warning};
   box-shadow: 0 0 10px rgba(255, 153, 0, 0.2);
+  
+  /* Mobile responsive improvements */
+  @media (max-width: 768px) {
+    padding: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.8rem;
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
   
   &::before {
     content: "RECOVERY KEY";
@@ -2453,7 +2535,12 @@ const ColdWallet = ({ onNavigate }) => {
             </div>
           )}
           <WalletAddress>
-            {activeWallet.address}
+            <span className="full-address">
+              {activeWallet.address}
+            </span>
+            <span className="truncated-address">
+              {truncateAddress(activeWallet.address, 8, 6)}
+            </span>
           </WalletAddress>
           
           <QRCodeContainer>
@@ -2916,7 +3003,7 @@ const ColdWallet = ({ onNavigate }) => {
                                 fontFamily: 'monospace',
                                 wordBreak: 'break-all'
                               }}>
-                                {token.address.slice(0, 16)}...{token.address.slice(-12)}
+                                {truncateAddress(token.address)}
                               </div>
                             </div>
                             
@@ -3581,7 +3668,7 @@ const ColdWallet = ({ onNavigate }) => {
                           <td style={{ padding: '0.5rem' }}>{token.name || token.symbol}</td>
                           <td style={{ padding: '0.5rem' }}>{network.name}</td>
                           <td style={{ padding: '0.5rem', fontFamily: 'monospace', fontSize: '0.8rem' }}>
-                            {`${token.address.substring(0, 6)}...${token.address.substring(token.address.length - 4)}`}
+                            {truncateAddress(token.address)}
                           </td>
                           <td style={{ padding: '0.5rem', textAlign: 'center' }}>{token.decimals}</td>
                           <td style={{ padding: '0.5rem', textAlign: 'center' }}>
