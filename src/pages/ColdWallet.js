@@ -505,6 +505,62 @@ const Button = styled.button`
   }
 `;
 
+const TransactionCard = styled.div`
+  background: linear-gradient(135deg, rgba(0, 204, 51, 0.08), rgba(0, 204, 51, 0.03));
+  border-radius: 12px;
+  border: 1px solid rgba(0, 204, 51, 0.2);
+  padding: 1.2rem;
+  cursor: ${props => props.clickable ? 'pointer' : 'default'};
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  
+  &:hover {
+    ${props => props.clickable && `
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 204, 51, 0.15);
+      border-color: rgba(0, 204, 51, 0.4);
+    `}
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    border-radius: 8px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.8rem;
+  }
+`;
+
+const TransactionGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: start;
+  margin-bottom: 0.8rem;
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+    text-align: left;
+  }
+`;
+
+const TransactionFooter = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(0, 204, 51, 0.1);
+  
+  @media (max-width: 480px) {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+`;
+
 const TabContainer = styled.div`
   display: flex;
   margin-bottom: 1.5rem;
@@ -4272,46 +4328,41 @@ const ColdWallet = ({ onNavigate }) => {
             
             {/* Transaction History Section */}
             <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(0, 204, 51, 0.3)', paddingTop: '1.5rem' }}>
-              <Label style={{ fontSize: '1.1rem', marginBottom: '1rem', display: 'block' }}>
-                Transaction History
+              <Label style={{ 
+                fontSize: '1.2rem', 
+                marginBottom: '1.5rem', 
+                display: 'flex', 
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontWeight: 'bold',
+                color: '#00cc33'
+              }}>
+                <span>📜</span> Transaction History
               </Label>
               
               {transactions.filter(tx => tx.walletId === activeWallet.id).length === 0 ? (
                 <div style={{ 
-                  padding: '1rem',
+                  padding: '2rem',
                   backgroundColor: 'rgba(0, 204, 51, 0.05)',
-                  borderRadius: '4px',
-                  border: '1px dashed rgba(0, 204, 51, 0.3)',
+                  borderRadius: '12px',
+                  border: '2px dashed rgba(0, 204, 51, 0.3)',
                   textAlign: 'center',
-                  color: 'rgba(0, 204, 51, 0.7)'
+                  color: 'rgba(0, 204, 51, 0.8)'
                 }}>
-                  No transactions signed yet for this wallet
+                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📋</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                    No transactions yet
+                  </div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.7 }}>
+                    Your signed transactions will appear here
+                  </div>
                 </div>
               ) : (
                 <div style={{ 
-                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                  borderRadius: '4px',
-                  border: '1px solid rgba(0, 204, 51, 0.3)',
-                  overflow: 'hidden'
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.8rem'
                 }}>
-                  {/* Table Header */}
-                  <div style={{ 
-                    display: 'grid',
-                    gridTemplateColumns: '80px 1fr 120px 120px',
-                    gap: '1rem',
-                    padding: '0.75rem 1rem',
-                    backgroundColor: 'rgba(0, 204, 51, 0.1)',
-                    borderBottom: '1px solid rgba(0, 204, 51, 0.3)',
-                    fontWeight: 'bold',
-                    fontSize: '0.9rem'
-                  }}>
-                    <div>#</div>
-                    <div>Recipient</div>
-                    <div>Token/Amount</div>
-                    <div>Date</div>
-                  </div>
-                  
-                  {/* Transaction Rows */}
                   {transactions
                     .filter(tx => tx.walletId === activeWallet.id)
                     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -4320,39 +4371,120 @@ const ColdWallet = ({ onNavigate }) => {
                       const explorerUrl = tx.explorerUrl ? `${tx.explorerUrl}/tx/${tx.txHash}` : null;
                       
                       return (
-                        <div 
+                        <TransactionCard
                           key={tx.id} 
-                          style={{ 
-                            display: 'grid',
-                            gridTemplateColumns: '80px 1fr 120px 120px',
-                            gap: '1rem',
-                            padding: '0.75rem 1rem',
-                            borderBottom: index < transactions.filter(t => t.walletId === activeWallet.id).length - 1 ? '1px solid rgba(0, 204, 51, 0.1)' : 'none',
-                            cursor: explorerUrl ? 'pointer' : 'default',
-                            transition: 'background-color 0.2s',
-                            fontSize: '0.85rem'
-                          }}
+                          clickable={!!explorerUrl}
                           onClick={() => explorerUrl && window.open(explorerUrl, '_blank')}
-                          onMouseEnter={(e) => explorerUrl && (e.target.style.backgroundColor = 'rgba(0, 204, 51, 0.05)')}
-                          onMouseLeave={(e) => explorerUrl && (e.target.style.backgroundColor = 'transparent')}
                           title={explorerUrl ? 'Click to view on blockchain explorer' : 'Blockchain explorer not available'}
                         >
-                          <div style={{ fontWeight: 'bold' }}>{txNumber}</div>
-                          <div style={{ 
-                            overflow: 'hidden', 
-                            textOverflow: 'ellipsis',
-                            fontFamily: 'monospace'
+                          {/* Transaction Number Badge */}
+                          <div style={{
+                            position: 'absolute',
+                            top: '0.8rem',
+                            right: '0.8rem',
+                            background: 'rgba(0, 204, 51, 0.2)',
+                            color: '#00cc33',
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: '12px',
+                            fontSize: '0.75rem',
+                            fontWeight: 'bold'
                           }}>
-                            {tx.recipient?.slice(0, 10)}...{tx.recipient?.slice(-8)}
+                            #{txNumber}
                           </div>
-                          <div>
-                            <div style={{ fontWeight: 'bold' }}>{tx.tokenSymbol}</div>
-                            <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>{tx.amount}</div>
-                          </div>
-                          <div style={{ fontSize: '0.75rem' }}>
-                            {new Date(tx.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
+                          
+                          {/* Main Transaction Info */}
+                          <TransactionGrid>
+                            <div>
+                              <div style={{ 
+                                fontSize: '0.85rem', 
+                                color: '#00cc33',
+                                fontWeight: 'bold',
+                                marginBottom: '0.3rem'
+                              }}>
+                                To: 
+                              </div>
+                              <div style={{ 
+                                fontFamily: 'monospace',
+                                fontSize: '0.9rem',
+                                color: '#ffffff',
+                                wordBreak: 'break-all'
+                              }}>
+                                {truncateAddress(tx.recipient, 12, 8)}
+                              </div>
+                            </div>
+                            
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ 
+                                fontSize: '1rem',
+                                fontWeight: 'bold',
+                                color: '#00cc33',
+                                marginBottom: '0.2rem'
+                              }}>
+                                {tx.amount} {tx.tokenSymbol}
+                              </div>
+                              <div style={{ 
+                                fontSize: '0.75rem',
+                                opacity: 0.7,
+                                color: '#ffffff'
+                              }}>
+                                {new Date(tx.createdAt).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </div>
+                            </div>
+                          </TransactionGrid>
+                          
+                          {/* Status and Explorer Link */}
+                          <TransactionFooter>
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem'
+                            }}>
+                              <span style={{ 
+                                color: '#00cc33',
+                                fontSize: '0.9rem' 
+                              }}>✅</span>
+                              <span style={{ 
+                                fontSize: '0.8rem',
+                                color: 'rgba(255, 255, 255, 0.8)'
+                              }}>
+                                Signed & Ready
+                              </span>
+                            </div>
+                            
+                            {explorerUrl && (
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.3rem',
+                                fontSize: '0.75rem',
+                                color: 'rgba(0, 204, 51, 0.8)',
+                                fontWeight: 'bold'
+                              }}>
+                                <span>🔗</span>
+                                <span>View on Explorer</span>
+                              </div>
+                            )}
+                          </TransactionFooter>
+                          
+                          {/* Hover Effect Overlay */}
+                          {explorerUrl && (
+                            <div style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              background: 'linear-gradient(135deg, rgba(0, 204, 51, 0.05), transparent)',
+                              opacity: 0,
+                              transition: 'opacity 0.3s ease',
+                              pointerEvents: 'none'
+                            }} />
+                          )}
+                        </TransactionCard>
                       );
                     })}
                 </div>
