@@ -526,6 +526,14 @@ const TransactionCard = styled.div`
   @media (max-width: 768px) {
     padding: 1rem;
     border-radius: 8px;
+    
+    .desktop-address {
+      display: none !important;
+    }
+    
+    .mobile-address {
+      display: inline !important;
+    }
   }
   
   @media (max-width: 480px) {
@@ -4409,7 +4417,16 @@ const ColdWallet = ({ onNavigate }) => {
                                 color: '#ffffff',
                                 wordBreak: 'break-all'
                               }}>
-                                {truncateAddress(tx.recipient, 12, 8)}
+                                <span className="desktop-address" style={{ 
+                                  display: 'inline' 
+                                }}>
+                                  {truncateAddress(tx.recipient, 12, 8)}
+                                </span>
+                                <span className="mobile-address" style={{ 
+                                  display: 'none' 
+                                }}>
+                                  {truncateAddress(tx.recipient, 2, 4)}
+                                </span>
                               </div>
                             </div>
                             
