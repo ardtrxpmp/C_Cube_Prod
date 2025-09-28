@@ -340,9 +340,11 @@ const Landing = ({ onAppSelect, onNavigate }) => {
   };
 
   const handleAppClick = (appName) => {
-    console.log('App clicked:', appName, 'onAppSelect:', onAppSelect);
+    console.log('App clicked:', appName, 'onNavigate:', onNavigate);
     if (appName === 'c-cube') {
-      handleLaunchApp();
+      if (onNavigate) {
+        onNavigate('downloads');
+      }
     } else {
       if (onAppSelect) {
         onAppSelect('coming-soon');

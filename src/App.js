@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
 import { GlobalStyle, theme } from './styles/GlobalStyle';
 import Layout from './components/Layout';
@@ -23,6 +23,134 @@ import FAQ from './pages/FAQ_Fixed';
 import ComingSoon from './pages/ComingSoon';
 import Downloads from './pages/Downloads';
 import SecurityPrompt from './components/SecurityPrompt';
+
+// Navigation wrapper component that can use useNavigate
+function AppContent() {
+  const navigate = useNavigate();
+  
+  // Navigation handler using React Router
+  const handlePageNavigation = (page) => {
+    const routeMap = {
+      'landing': '/',
+      'about-us': '/about',
+      'about': '/about',  
+      'community': '/community',
+      'learn': '/learn',
+      'content': '/learn',
+      'faq': '/faq',
+      'downloads': '/downloads',
+      'apps': '/apps',
+      'c-cube': '/apps',
+      'coming-soon': '/coming-soon'
+    };
+
+    const route = routeMap[page] || '/';
+    navigate(route);
+  };
+
+  return (
+    <Routes>
+      {/* Website routes with proper URLs */}
+      <Route path="/" element={
+        <>
+          <Header currentPage="landing" onNavigate={handlePageNavigation} />
+          <Landing onAppSelect={handlePageNavigation} onNavigate={handlePageNavigation} />
+        </>
+      } />
+      <Route path="/learn" element={
+        <>
+          <Header currentPage="content" onNavigate={handlePageNavigation} />
+          <Learn onNavigate={handlePageNavigation} />
+        </>
+      } />
+      <Route path="/about" element={
+        <>
+          <Header currentPage="about" onNavigate={handlePageNavigation} />
+          <AboutUs onNavigate={handlePageNavigation} />
+        </>
+      } />
+      <Route path="/community" element={
+        <>
+          <Header currentPage="community" onNavigate={handlePageNavigation} />
+          <Community onNavigate={handlePageNavigation} />
+        </>
+      } />
+      <Route path="/faq" element={
+        <>
+          <Header currentPage="faq" onNavigate={handlePageNavigation} />
+          <FAQ onNavigate={handlePageNavigation} />
+        </>
+      } />
+      <Route path="/downloads" element={
+        <>
+          <Header currentPage="downloads" onNavigate={handlePageNavigation} />
+          <Downloads onNavigate={handlePageNavigation} />
+        </>
+      } />
+      <Route path="/coming-soon" element={
+        <>
+          <Header currentPage="coming-soon" onNavigate={handlePageNavigation} />
+          <ComingSoon onNavigate={handlePageNavigation} />
+        </>
+      } />
+
+      {/* C-Cube app routes */}
+      <Route path="/apps/*" element={<CCubeAppRoutes />} />
+      
+      {/* Fallback route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+// Separate component for C-Cube app routes
+function CCubeAppRoutes() {
+  const [isSetup, setIsSetup] = useState(false);
+  const [isSecurityPromptAcknowledged, setIsSecurityPromptAcknowledged] = useState(false);
+  const [hasInitialChoice, setHasInitialChoice] = useState(false);
+  const [isWebEnvironment, setIsWebEnvironment] = useState(false);
+
+  useEffect(() => {
+    const envInfo = EnvironmentDetection.getEnvironmentInfo();
+    setIsWebEnvironment(envInfo.isWeb);
+    
+    const hasSetupWallet = localStorage.getItem('walletSetup');
+    if (hasSetupWallet === 'true') {
+      setIsSetup(true);
+    }
+    
+    const walletAction = localStorage.getItem('walletAction');
+    if (walletAction === 'create' || walletAction === 'recover') {
+      setHasInitialChoice(true);
+    }
+  }, []);
+
+  if (!isSecurityPromptAcknowledged) {
+    return (
+      <ThemeProvider theme={theme}>
+        <SecurityPrompt onAcknowledge={() => setIsSecurityPromptAcknowledged(true)} />
+      </ThemeProvider>
+    );
+  }
+
+  return (
+    <AppProvider>
+      {isWebEnvironment && <WebWarningBanner />}
+      <Layout>
+        <Routes>
+          <Route path="/resources" element={<Resources />} />
+          <Route path="/broadcast" element={<Broadcast />} />
+          <Route path="/wallet" element={<ColdWallet />} />
+          <Route path="/" element={
+            isSetup ? <ColdWallet /> : 
+            hasInitialChoice ? <SetupWallet onSetupComplete={() => setIsSetup(true)} /> : 
+            <WelcomeScreen />
+          } />
+        </Routes>
+      </Layout>
+    </AppProvider>
+  );
+}
 
 function App() {
   const [currentPage, setCurrentPage] = useState('landing'); // Start with landing page
@@ -54,11 +182,28 @@ function App() {
   }, []);
 
   const handlePageNavigation = (page) => {
-    setCurrentPage(page);
-    // Reset security prompt for C-Cube if navigating away from it
-    if (page !== 'c-cube') {
-      setIsSecurityPromptAcknowledged(false);
-    }
+    console.log('Navigation requested to:', page);
+    
+    // Map page names to actual routes
+    const routeMap = {
+      'landing': '/',
+      'about-us': '/about',
+      'about': '/about',
+      'community': '/community',
+      'learn': '/learn',
+      'content': '/learn',
+      'faq': '/faq',
+      'downloads': '/downloads',
+      'apps': '/apps',
+      'c-cube': '/apps',
+      'coming-soon': '/coming-soon'
+    };
+
+    const route = routeMap[page] || '/';
+    console.log('Navigating to route:', route);
+    
+    // Use window.location to navigate to the actual URL
+    window.location.href = route;
   };
 
   // Render C-Cube wallet app with its original logic

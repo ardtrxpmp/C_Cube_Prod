@@ -93,7 +93,11 @@ const Logo = styled.div`
   margin-bottom: 15px;
 `;
 
-const Footer = () => {
+const Footer = ({ onNavigate }) => {
+  const handleNavClick = (page) => {
+    if (onNavigate) onNavigate(page);
+  };
+
   return (
     <FooterContainer className="website-page">
       <FooterContent>
@@ -108,7 +112,7 @@ const Footer = () => {
         <FooterSection>
           <h3>Educational Tools</h3>
           <ul>
-            <li><a href="#">C-Cube Cold Wallet</a></li>
+            <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('apps'); }}>C-Cube Cold Wallet</a></li>
             <li><a href="#">DeFi Simulator (Coming Soon)</a></li>
             <li><a href="#">Blockchain Academy (Coming Soon)</a></li>
             <li><a href="#">Portfolio Tracker (Coming Soon)</a></li>
@@ -119,10 +123,10 @@ const Footer = () => {
         <FooterSection>
           <h3>Learn & Support</h3>
           <ul>
-            <li><a href="#">Getting Started Guide</a></li>
-            <li><a href="#">Educational Content</a></li>
-            <li><a href="#">Frequently Asked Questions</a></li>
-            <li><a href="#">Community Forum</a></li>
+            <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('learn'); }}>Getting Started Guide</a></li>
+            <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('learn'); }}>Educational Content</a></li>
+            <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('faq'); }}>Frequently Asked Questions</a></li>
+            <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('community'); }}>Community Forum</a></li>
             <li><a href="mailto:admin@citadelcube.com">Contact Support</a></li>
           </ul>
         </FooterSection>
@@ -130,11 +134,11 @@ const Footer = () => {
         <FooterSection>
           <h3>Resources</h3>
           <ul>
-            <li><a href="#">Documentation</a></li>
+            <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('learn'); }}>Documentation</a></li>
             <li><a href="#">API Reference</a></li>
-            <li><a href="#">Security Best Practices</a></li>
+            <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('learn'); }}>Security Best Practices</a></li>
             <li><a href="#">Glossary</a></li>
-            <li><a href="#">Video Tutorials</a></li>
+            <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('learn'); }}>Video Tutorials</a></li>
           </ul>
         </FooterSection>
       </FooterContent>

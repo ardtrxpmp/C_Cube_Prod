@@ -569,6 +569,86 @@ const TransactionFooter = styled.div`
   }
 `;
 
+const TokenTableHeader = styled.div`
+  background: linear-gradient(135deg, #00cc33, #009929);
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 1rem;
+  align-items: center;
+  font-weight: bold;
+  color: white;
+  font-size: 0.9rem;
+  min-height: 60px;
+  
+  & > div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+  }
+  
+  & > div:first-child {
+    justify-content: flex-start;
+    text-align: left;
+  }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1.2fr 65px 70px 60px 60px;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+    padding: 0.7rem 0.4rem;
+    min-height: 48px;
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr 50px 55px 50px 50px;
+    gap: 0.2rem;
+    font-size: 0.6rem;
+    padding: 0.5rem 0.2rem;
+    min-height: 42px;
+  }
+`;
+
+const TokenTableRow = styled.div`
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 1rem;
+  align-items: center;
+  border-bottom: ${props => props.showBorder ? '1px solid rgba(0, 204, 51, 0.2)' : 'none'};
+  background-color: ${props => props.isSelected ? 'rgba(0, 204, 51, 0.1)' : 'transparent'};
+  transition: all 0.3s ease;
+  min-height: 60px;
+  
+  & > div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+  
+  & > div:first-child {
+    justify-content: flex-start;
+    text-align: left;
+  }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1.2fr 65px 70px 60px 60px;
+    gap: 0.4rem;
+    padding: 0.7rem 0.4rem;
+    min-height: 48px;
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr 50px 55px 50px 50px;
+    gap: 0.2rem;
+    padding: 0.5rem 0.2rem;
+    min-height: 42px;
+  }
+`;
+
 const TabContainer = styled.div`
   display: flex;
   margin-bottom: 1.5rem;
@@ -3020,37 +3100,22 @@ const ColdWallet = ({ onNavigate }) => {
                       boxShadow: '0 4px 20px rgba(0, 204, 51, 0.2)'
                     }}>
                       {/* Table Header */}
-                      <div style={{
-                        background: 'linear-gradient(135deg, #00cc33, #009929)',
-                        padding: '1rem',
-                        display: 'grid',
-                        gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
-                        gap: '1rem',
-                        alignItems: 'center',
-                        fontWeight: 'bold',
-                        color: 'white',
-                        fontSize: '0.9rem'
-                      }}>
+                      <TokenTableHeader>
                         <div>Token Details</div>
                         <div style={{ textAlign: 'center' }}>Symbol</div>
                         <div style={{ textAlign: 'center' }}>Balance</div>
                         <div style={{ textAlign: 'center' }}>Actions</div>
                         <div style={{ textAlign: 'center' }}>Refresh</div>
-                      </div>
+                      </TokenTableHeader>
                       
                       {/* Table Body */}
                       {tokens.length > 0 ? (
                         tokens.map((token, index) => (
-                          <div key={token.id} style={{
-                            padding: '1rem',
-                            display: 'grid',
-                            gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
-                            gap: '1rem',
-                            alignItems: 'center',
-                            borderBottom: index < tokens.length - 1 ? '1px solid rgba(0, 204, 51, 0.2)' : 'none',
-                            backgroundColor: selectedAsset === `token-${token.id}` ? 'rgba(0, 204, 51, 0.1)' : 'transparent',
-                            transition: 'all 0.3s ease'
-                          }}>
+                          <TokenTableRow 
+                            key={token.id}
+                            showBorder={index < tokens.length - 1}
+                            isSelected={selectedAsset === `token-${token.id}`}
+                          >
                             {/* Token Details */}
                             <div>
                               <div style={{ 
@@ -3102,7 +3167,12 @@ const ColdWallet = ({ onNavigate }) => {
                             </div>
                             
                             {/* Select Button */}
-                            <div style={{ textAlign: 'center' }}>
+                            <div style={{ 
+                              display: 'flex', 
+                              justifyContent: 'center', 
+                              alignItems: 'center',
+                              height: '100%'
+                            }}>
                               <button
                                 onClick={() => {
                                   setSelectedAsset(`token-${token.id}`);
@@ -3110,26 +3180,39 @@ const ColdWallet = ({ onNavigate }) => {
                                   setTimeout(() => setSuccess(''), 2000);
                                 }}
                                 style={{
-                                  padding: '0.5rem 0.75rem',
-                                  fontSize: '0.8rem',
+                                  padding: '0.3rem 0.4rem',
+                                  fontSize: selectedAsset === `token-${token.id}` ? '0.9rem' : '0.6rem',
                                   background: selectedAsset === `token-${token.id}` 
                                     ? 'linear-gradient(135deg, #00cc33, #009929)' 
                                     : 'transparent',
-                                  border: '2px solid #00cc33',
+                                  border: '1px solid #00cc33',
                                   color: selectedAsset === `token-${token.id}` ? 'white' : '#00cc33',
-                                  borderRadius: '5px',
+                                  borderRadius: '3px',
                                   cursor: 'pointer',
                                   fontWeight: 'bold',
                                   transition: 'all 0.3s ease',
-                                  width: '100%'
+                                  width: '100%',
+                                  height: '28px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  textAlign: 'center',
+                                  lineHeight: '1',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden'
                                 }}
                               >
-                                {selectedAsset === `token-${token.id}` ? 'SELECTED' : 'SELECT'}
+                                {selectedAsset === `token-${token.id}` ? '✅' : 'SELECT'}
                               </button>
                             </div>
                             
                             {/* Refresh Button */}
-                            <div style={{ textAlign: 'center' }}>
+                            <div style={{ 
+                              display: 'flex', 
+                              justifyContent: 'center', 
+                              alignItems: 'center',
+                              height: '100%'
+                            }}>
                               <button
                                 onClick={async () => {
                                   setSuccess(`Refreshing ${token.symbol} balance...`);
@@ -3139,24 +3222,32 @@ const ColdWallet = ({ onNavigate }) => {
                                 }}
                                 disabled={loadingBalances[`${token.id}-${currentNetwork.id}`]}
                                 style={{
-                                  padding: '0.5rem 0.75rem',
-                                  fontSize: '0.8rem',
+                                  padding: '0.3rem 0.4rem',
+                                  fontSize: '1rem',
                                   background: loadingBalances[`${token.id}-${currentNetwork.id}`] 
                                     ? 'rgba(102, 102, 102, 0.5)' 
                                     : 'linear-gradient(135deg, #0066cc, #004499)',
                                   border: 'none',
                                   color: 'white',
-                                  borderRadius: '5px',
+                                  borderRadius: '3px',
                                   cursor: loadingBalances[`${token.id}-${currentNetwork.id}`] ? 'not-allowed' : 'pointer',
                                   fontWeight: 'bold',
                                   transition: 'all 0.3s ease',
-                                  width: '100%'
+                                  width: '100%',
+                                  height: '28px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  textAlign: 'center',
+                                  lineHeight: '1',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden'
                                 }}
                               >
-                                {loadingBalances[`${token.id}-${currentNetwork.id}`] ? 'LOADING...' : 'REFRESH'}
+                                {loadingBalances[`${token.id}-${currentNetwork.id}`] ? '⟳' : '🔄'}
                               </button>
                             </div>
-                          </div>
+                          </TokenTableRow>
                         ))
                       ) : (
                         <div style={{

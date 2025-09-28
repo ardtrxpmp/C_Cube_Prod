@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import Footer from '../components/Footer_New';
 
 const CommunityContainer = styled.div`
   min-height: 100vh;
@@ -272,6 +273,7 @@ const Community = ({ onNavigate }) => {
           </TextContainer>
         </HeroContent>
       </HeroSection>
+      <Footer onNavigate={onNavigate} />
     </CommunityContainer>
   );
 };

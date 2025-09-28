@@ -200,7 +200,7 @@ const Footer = ({ onNavigate }) => {
           <FooterSection>
             <h4>Platform</h4>
             <ul>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('c-cube'); }}>C-Cube Wallet</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('apps'); }}>C-Cube Wallet</a></li>
               <li><a href="#">File Encryption Tool</a></li>
               <li><a href="#">Network Security Scanner</a></li>
               <li><a href="#">Blockchain Explorer</a></li>
@@ -212,19 +212,19 @@ const Footer = ({ onNavigate }) => {
           <FooterSection>
             <h4>Resources</h4>
             <ul>
-              <li><a href="#">Documentation</a></li>
-              <li><a href="#">API Reference</a></li>
-              <li><a href="#">Security Guides</a></li>
-              <li><a href="#">Best Practices</a></li>
-              <li><a href="#">Community</a></li>
-              <li><a href="#">Support</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('learn'); }}>Documentation</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('faq'); }}>FAQ</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('learn'); }}>Security Guides</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('learn'); }}>Best Practices</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('community'); }}>Community</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('community'); }}>Support</a></li>
             </ul>
           </FooterSection>
 
           <FooterSection>
             <h4>Company</h4>
             <ul>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('about'); }}>About Us</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavClick('about-us'); }}>About Us</a></li>
               <li><a href="#">Blog</a></li>
               <li><a href="#">Careers</a></li>
               <li><a href="#">Press Kit</a></li>

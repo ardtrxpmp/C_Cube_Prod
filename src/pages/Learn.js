@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { PageBackground, PageContent } from '../components/shared/PageBackground';
 import { scrollToSection, updateUrlHash, getHashFromUrl, handleHashNavigation, createSectionId } from '../utils/scrollUtils';
+import Footer from '../components/Footer_New';
 
 const LearnContainer = styled.div`
   max-width: 1200px;
@@ -669,7 +670,7 @@ const QuickTopicButton = styled.button`
   }
 `;
 
-const Learn = () => {
+const Learn = ({ onNavigate }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -1125,6 +1126,7 @@ const Learn = () => {
           </VideoModalContent>
         </VideoModal>
       )}
+      <Footer onNavigate={onNavigate} />
     </PageBackground>
   );
 };
