@@ -17,6 +17,7 @@ import Resources from './pages/Resources';
 import Landing from './pages/Landing_New';
 import Content from './pages/Content';
 import Learn from './pages/Learn';
+import AITutor from './pages/AITutor';
 import AboutUs from './pages/AboutUs';
 import Community from './pages/Community';
 import FAQ from './pages/FAQ_Fixed';
@@ -37,6 +38,7 @@ function AppContent() {
       'community': '/community',
       'learn': '/learn',
       'content': '/learn',
+      'ai-tutor': '/ai-tutor',
       'faq': '/faq',
       'downloads': '/downloads',
       'apps': '/apps',
@@ -192,6 +194,7 @@ function App() {
       'community': '/community',
       'learn': '/learn',
       'content': '/learn',
+      'ai-tutor': '/ai-tutor',
       'faq': '/faq',
       'downloads': '/downloads',
       'apps': '/apps',
@@ -282,6 +285,9 @@ function App() {
               <Header currentPage="content" onNavigate={handlePageNavigation} />
               <Learn onNavigate={handlePageNavigation} />
             </>
+          } />
+          <Route path="/ai-tutor" element={
+            <AITutor onNavigate={handlePageNavigation} />
           } />
           <Route path="/about" element={
             <>

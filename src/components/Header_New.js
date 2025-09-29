@@ -32,6 +32,27 @@ const Logo = styled.div`
   position: absolute;
   left: 0px;
   z-index: 10;
+  
+  @media (max-width: 768px) {
+    position: absolute;
+    right: 20px;
+    left: auto;
+  }
+
+  a {
+    text-decoration: none !important;
+    border: none !important;
+    outline: none !important;
+    
+    &:hover,
+    &:focus,
+    &:active,
+    &:visited {
+      text-decoration: none !important;
+      border: none !important;
+      outline: none !important;
+    }
+  }
 
   @media (max-width: 1400px) and (min-width: 769px) {
     display: none;
@@ -237,6 +258,9 @@ const MobileMenuButton = styled.button`
 
   @media (max-width: 768px) {
     display: block;
+    position: absolute;
+    left: 20px;
+    z-index: 10;
   }
 `;
 
@@ -280,7 +304,7 @@ const DisclaimerContainer = styled.div`
   @media (max-width: 768px) {
     background-attachment: scroll;
   }
-  border-bottom: 1px solid rgba(220, 38, 38, 0.6);
+  border-bottom: none;
   height: 35px;
   overflow: hidden;
   backdrop-filter: blur(10px);

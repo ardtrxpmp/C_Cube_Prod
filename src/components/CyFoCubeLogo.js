@@ -13,9 +13,27 @@ const LogoContainer = styled.div`
   cursor: pointer;
   transition: opacity 0.3s ease;
   margin-left: 5px;
+  text-decoration: none !important;
+  border: none !important;
+  outline: none !important;
 
   &:hover {
     opacity: 0.8;
+  }
+  
+  &:hover,
+  &:focus,
+  &:active,
+  &:visited {
+    text-decoration: none !important;
+    border: none !important;
+    outline: none !important;
+  }
+  
+  * {
+    text-decoration: none !important;
+    border: none !important;
+    outline: none !important;
   }
 `;
 
@@ -41,10 +59,22 @@ const LogoText = styled.span`
   font-weight: 700;
   color: #e0e0e0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  text-decoration: none;
+  text-decoration: none !important;
   margin-left: -35px;
   transform: translateY(-4px);
   display: inline-block;
+  border: none !important;
+  outline: none !important;
+  
+  &:hover,
+  &:focus,
+  &:active,
+  &:visited {
+    text-decoration: none !important;
+    border: none !important;
+    outline: none !important;
+    color: #e0e0e0;
+  }
   
   @media (max-width: 768px) {
     display: none;

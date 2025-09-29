@@ -911,7 +911,7 @@ const Learn = ({ onNavigate }) => {
       </AIFeatures>
       
       <ButtonGroup>
-        <StartChatButton>
+        <StartChatButton onClick={() => onNavigate('ai-tutor')}>
           Start Learning Session
         </StartChatButton>
       </ButtonGroup>
