@@ -35,8 +35,7 @@ const Logo = styled.div`
   
   @media (max-width: 768px) {
     position: absolute;
-    right: 20px;
-    left: auto;
+    left: 20px;
   }
 
   a {
@@ -259,7 +258,7 @@ const MobileMenuButton = styled.button`
   @media (max-width: 768px) {
     display: block;
     position: absolute;
-    left: 20px;
+    right: 20px;
     z-index: 10;
   }
 `;
