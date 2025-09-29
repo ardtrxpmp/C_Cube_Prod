@@ -1136,7 +1136,8 @@ const AITutor = ({ onNavigate }) => {
               {isSidebarOpen ? '✕' : '☰'}
             </HamburgerButton>
             <SidebarMenu isOpen={isSidebarOpen}>
-              {projects.map(project => (
+              {/* Only render menu items when sidebar is open */}
+              {isSidebarOpen && projects.map(project => (
                 <MenuItemWrapper 
                   key={project.id}
                   onMouseEnter={() => setHoveredProject(project.id)}
