@@ -55,8 +55,8 @@ const Logo = styled.div`
   @media (max-width: 768px) {
     display: flex;
     position: absolute;
-    right: 60px;
-    left: auto;
+    left: 20px;
+    right: auto;
     z-index: 10;
     transform: scale(0.7);
   }
