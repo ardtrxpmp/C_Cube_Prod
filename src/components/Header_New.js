@@ -32,11 +32,6 @@ const Logo = styled.div`
   position: absolute;
   left: 0px;
   z-index: 10;
-  
-  @media (max-width: 768px) {
-    position: absolute;
-    left: 20px;
-  }
 
   a {
     text-decoration: none !important;
@@ -60,7 +55,7 @@ const Logo = styled.div`
   @media (max-width: 768px) {
     display: flex;
     position: absolute;
-    right: 10px;
+    right: 60px;
     left: auto;
     z-index: 10;
     transform: scale(0.7);
