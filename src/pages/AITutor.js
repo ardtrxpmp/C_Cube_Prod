@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
+import LearnAIInterface from '../components/LearnAI/LearnAIInterface';
 
 // Orbital Animation Keyframes
 const orbit = keyframes`
@@ -156,7 +157,7 @@ const AIContent = styled.div`
 // Hamburger Button inside sidebar
 const HamburgerButton = styled.button`
   position: absolute;
-  top: 10px;
+  top: 0px;
   left: ${props => props.isOpen ? '0px' : '0px'};
   width: 60px;
   height: 60px;
@@ -183,13 +184,13 @@ const Sidebar = styled.div`
   border: none;
   border-right: 1px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
-  padding: 24px 0px;
-  height: calc(100vh - 80px);
-  min-height: 400px;
+  padding: ${props => props.isOpen ? '24px 0px' : '0px'};
+  height: ${props => props.isOpen ? 'calc(100vh - 80px)' : '60px'};
+  min-height: ${props => props.isOpen ? '400px' : '60px'};
   position: sticky;
   top: 0;
   z-index: 10;
-  transition: width 0.3s ease;
+  transition: width 0.3s ease, height 0.3s ease, padding 0.3s ease;
   overflow: visible;
   
   @media (max-width: 768px) {
@@ -198,8 +199,8 @@ const Sidebar = styled.div`
     margin-bottom: 20px;
     height: fit-content;
     min-height: auto;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0;
+    border: none;
   }
 `;
 
@@ -224,7 +225,7 @@ const SidebarMenu = styled.div`
   border-radius: 0;
   border: none;
   overflow: visible;
-  margin-top: ${props => props.isOpen ? '55px' : '55px'};
+  margin-top: ${props => props.isOpen ? '30px' : '30px'};
   transition: margin-top 0.3s ease;
 `;
 
@@ -363,16 +364,16 @@ const MenuItemWrapper = styled.div`
 // Main Content Area
 const MainContent = styled.div`
   flex: 1;
-  background: #ffffff;
+  background: ${props => props.isLearnAI ? 'transparent' : '#ffffff'};
   border-radius: 0;
   border: none;
-  padding: 32px;
+  padding: ${props => props.isLearnAI ? '0' : '32px'};
   height: 100vh;
   overflow-y: auto;
   color: #333333;
   
   @media (max-width: 768px) {
-    padding: 20px;
+    padding: ${props => props.isLearnAI ? '0' : '20px'};
     height: 100vh;
   }
 `;
@@ -732,10 +733,9 @@ const AITutor = ({ onNavigate }) => {
       icon: '🤖',
       status: 'coming-soon',
       submenu: [
-        { id: 'natural-language', title: 'Natural Language Processing', icon: '💬' },
-        { id: 'blockchain-queries', title: 'Blockchain Query Engine', icon: '🔍' },
-        { id: 'smart-responses', title: 'Smart Response System', icon: '🧠' },
-        { id: 'multilingual-support', title: 'Multilingual Support', icon: '🌐' }
+        { id: 'learn-ai', title: 'Learn AI', icon: '🌱', description: 'Fundamentals and basics' },
+        { id: 'build-ai', title: 'Build AI', icon: '🔧', description: 'Technical development' },
+        { id: 'earn-ai', title: 'Earn AI', icon: '💰', description: 'Investment & Trading' }
       ]
     },
     {
@@ -745,10 +745,10 @@ const AITutor = ({ onNavigate }) => {
       icon: '🎯',
       status: 'coming-soon',
       submenu: [
-        { id: 'knowledge-assessment', title: 'Knowledge Assessment', icon: '📊' },
-        { id: 'dynamic-curriculum', title: 'Dynamic Curriculum Generation', icon: '🎓' },
-        { id: 'progress-tracking', title: 'Progress Tracking', icon: '📈' },
-        { id: 'custom-path', title: 'Custom Path', icon: '⚙️' }
+        { id: 'skill-assessment', title: 'Skill Assessment', icon: '�', description: 'Test current knowledge level' },
+        { id: 'custom-roadmap', title: 'Custom Roadmap', icon: '🗺️', description: 'Generate personalized learning path' },
+        { id: 'adaptive-content', title: 'Adaptive Content', icon: '📚', description: 'Content that adjusts to your pace' },
+        { id: 'progress-tracker', title: 'Progress Tracker', icon: '🏆', description: 'Monitor learning milestones' }
       ]
     }
   ];
@@ -1119,6 +1119,10 @@ const AITutor = ({ onNavigate }) => {
           </>
         );
       
+      // Learn AI subcategory - render the comprehensive learning interface
+      case 'learn-ai':
+        return <LearnAIInterface />;
+      
       default:
         return renderMainContent();
     }
@@ -1173,6 +1177,10 @@ const AITutor = ({ onNavigate }) => {
                           setActiveSubcategory(subItem.id);
                           setHoveredProject(null);
                           setClickedProject(null);
+                          // Keep sidebar open when Learn AI is selected
+                          if (subItem.id === 'learn-ai') {
+                            setIsSidebarOpen(true);
+                          }
                         }}
                       >
                         <span>{subItem.icon}</span>
@@ -1185,7 +1193,7 @@ const AITutor = ({ onNavigate }) => {
             </SidebarMenu>
           </Sidebar>
 
-          <MainContent sidebarOpen={isSidebarOpen}>
+          <MainContent sidebarOpen={isSidebarOpen} isLearnAI={activeSubcategory === 'learn-ai'}>
             {renderContent()}
           </MainContent>
         </AIContent>
