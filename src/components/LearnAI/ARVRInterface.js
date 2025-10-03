@@ -8,6 +8,7 @@ const ARContainer = styled.div`
   position: relative;
   overflow: hidden;
   perspective: 1200px;
+  padding-top: 20px;
 `;
 
 const HolographicDisplay = styled.div`

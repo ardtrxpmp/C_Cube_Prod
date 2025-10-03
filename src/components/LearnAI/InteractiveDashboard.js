@@ -19,7 +19,7 @@ const DashboardGrid = styled.div`
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr;
   gap: 20px;
-  padding: 20px;
+  padding: 80px 20px 20px 20px;
   height: 100%;
 `;
 

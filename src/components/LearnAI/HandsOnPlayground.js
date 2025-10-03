@@ -19,6 +19,7 @@ const PlaygroundContainer = styled.div`
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  padding-top: 60px;
 `;
 
 const PlaygroundHeader = styled.div`

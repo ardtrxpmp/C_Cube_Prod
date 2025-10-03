@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import VisualKnowledgeTree from './VisualKnowledgeTree';
-import BlockchainExplorer3D from './BlockchainExplorer3D';
 import GamifiedLearningHub from './GamifiedLearningHub';
 import ARVRInterface from './ARVRInterface';
 import InteractiveDashboard from './InteractiveDashboard';
 import StoryModeLearning from './StoryModeLearning';
 import HandsOnPlayground from './HandsOnPlayground';
 import EnhancedChatInterface from './EnhancedChatInterface';
+import WalletSetupPrompt from './WalletSetupPrompt';
 
 const LearnAIContainer = styled.div`
   width: 100%;
@@ -33,6 +32,42 @@ const HeaderContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 15px;
+`;
+
+const LeftSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+`;
+
+const CCubeWalletButton = styled.button`
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  border: none;
+  color: white;
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  height: 32px;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+    background: linear-gradient(135deg, #ff7849, #ffa726);
+  }
+  
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(255, 107, 53, 0.3);
+  }
 `;
 
 const InterfaceTitle = styled.h2`
@@ -134,8 +169,11 @@ const SelectorButton = styled.button`
   }
 `;
 
-const LearnAIInterface = () => {
-  const [activeInterface, setActiveInterface] = useState('knowledge-tree');
+  const LearnAIInterface = () => {
+  const [activeInterface, setActiveInterface] = useState('enhanced-chat');
+  const [walletSetup, setWalletSetup] = useState(false);
+  const [walletData, setWalletData] = useState(null);
+  const [showWalletSetup, setShowWalletSetup] = useState(false);
   const [userProgress, setUserProgress] = useState({
     completedNodes: [],
     currentLevel: 1,
@@ -144,29 +182,73 @@ const LearnAIInterface = () => {
   });
 
   const interfaces = [
-    { id: 'knowledge-tree', name: 'Knowledge Tree', component: VisualKnowledgeTree },
-    { id: '3d-explorer', name: '3D Explorer', component: BlockchainExplorer3D },
+    { id: 'enhanced-chat', name: 'Assistant', component: EnhancedChatInterface },
     { id: 'gamified-hub', name: 'Gaming Hub', component: GamifiedLearningHub },
-    { id: 'ar-vr', name: 'AR/VR Style', component: ARVRInterface },
-    { id: 'dashboard', name: 'Dashboard', component: InteractiveDashboard },
     { id: 'story-mode', name: 'Story Mode', component: StoryModeLearning },
+    { id: 'dashboard', name: 'Dashboard', component: InteractiveDashboard },
     { id: 'playground', name: 'Playground', component: HandsOnPlayground },
-    { id: 'enhanced-chat', name: 'Enhanced Chat', component: EnhancedChatInterface }
+    { id: 'ar-vr', name: 'AR/VR Style', component: ARVRInterface }
   ];
+
+  const handleWalletClick = () => {
+    // Show the wallet setup UI that we created for AI tutor
+    setShowWalletSetup(true);
+  };
+
+  const handleWalletSetup = (newWalletData) => {
+    setWalletData(newWalletData);
+    setWalletSetup(true);
+    setShowWalletSetup(false); // Hide wallet setup after completion
+    // Optionally save to localStorage for persistence
+    localStorage.setItem('ccube_ai_wallet', JSON.stringify(newWalletData));
+  };
+
+  const handleCloseWalletSetup = () => {
+    setShowWalletSetup(false);
+  };
+
+  // Check for existing wallet on component mount
+  useEffect(() => {
+    const savedWallet = localStorage.getItem('ccube_ai_wallet');
+    if (savedWallet) {
+      try {
+        const walletInfo = JSON.parse(savedWallet);
+        setWalletData(walletInfo);
+        setWalletSetup(true);
+      } catch (err) {
+        console.error('Error loading saved wallet:', err);
+        localStorage.removeItem('ccube_ai_wallet');
+      }
+    }
+  }, []);
 
   const getCurrentInterface = () => {
     const selectedInterface = interfaces.find(i => i.id === activeInterface);
-    return selectedInterface ? selectedInterface.component : VisualKnowledgeTree;
+    return selectedInterface ? selectedInterface.component : EnhancedChatInterface;
   };
 
-  const CurrentComponent = getCurrentInterface();
+  const CurrentComponent = getCurrentInterface();  // Show wallet setup prompt if wallet is not set up OR if user clicked wallet button
+  if (!walletSetup || showWalletSetup) {
+    return (
+      <WalletSetupPrompt 
+        onWalletSetup={handleWalletSetup}
+        onClose={walletSetup ? handleCloseWalletSetup : null} // Only show close if wallet already exists
+        existingWallet={walletSetup ? walletData : null}
+      />
+    );
+  }
 
   return (
     <LearnAIContainer>
       <HeaderContainer>
-        <InterfaceTitle>
-          🧠 Learn AI - Blockchain Fundamentals
-        </InterfaceTitle>
+        <LeftSection>
+          <CCubeWalletButton onClick={handleWalletClick}>
+            💳 C-Cube Wallet
+          </CCubeWalletButton>
+          <InterfaceTitle>
+            🧠 Learn AI - Blockchain Fundamentals
+          </InterfaceTitle>
+        </LeftSection>
         
         <InterfaceSelector>
           <SelectorTitle>Choose Learning Interface:</SelectorTitle>
@@ -190,6 +272,7 @@ const LearnAIInterface = () => {
         <CurrentComponent 
           userProgress={userProgress}
           setUserProgress={setUserProgress}
+          walletData={walletData}
         />
       </ContentWrapper>
     </LearnAIContainer>
