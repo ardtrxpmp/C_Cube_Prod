@@ -7,6 +7,7 @@ import StoryModeLearning from './StoryModeLearning';
 import HandsOnPlayground from './HandsOnPlayground';
 import EnhancedChatInterface from './EnhancedChatInterface';
 import WalletSetupPrompt from './WalletSetupPrompt';
+import MigratePointDashboard from './MigratePointDashboard';
 
 const LearnAIContainer = styled.div`
   width: 100%;
@@ -44,7 +45,9 @@ const LeftSection = styled.div`
 `;
 
 const CCubeWalletButton = styled.button`
-  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  background: ${props => props.connected 
+    ? 'linear-gradient(135deg, #10b981, #059669)' 
+    : 'linear-gradient(135deg, #ff6b35, #f7931e)'};
   border: none;
   color: white;
   padding: 6px 16px;
@@ -53,20 +56,28 @@ const CCubeWalletButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+  box-shadow: ${props => props.connected 
+    ? '0 2px 8px rgba(16, 185, 129, 0.3)' 
+    : '0 2px 8px rgba(255, 107, 53, 0.3)'};
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   white-space: nowrap;
   height: 32px;
   
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
-    background: linear-gradient(135deg, #ff7849, #ffa726);
+    box-shadow: ${props => props.connected 
+      ? '0 4px 12px rgba(16, 185, 129, 0.4)' 
+      : '0 4px 12px rgba(255, 107, 53, 0.4)'};
+    background: ${props => props.connected 
+      ? 'linear-gradient(135deg, #34d399, #10b981)' 
+      : 'linear-gradient(135deg, #ff7849, #ffa726)'};
   }
   
   &:active {
     transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(255, 107, 53, 0.3);
+    box-shadow: ${props => props.connected 
+      ? '0 2px 6px rgba(16, 185, 129, 0.3)' 
+      : '0 2px 6px rgba(255, 107, 53, 0.3)'};
   }
 `;
 
@@ -122,20 +133,96 @@ const ButtonGrid = styled.div`
 
 const DecorativeLine = styled.div`
   position: absolute;
-  top: 90px;
-  left: 20px;
-  right: 20px;
+  bottom: 0;
+  left: 0;
+  right: 0;
   height: 2px;
   background: linear-gradient(90deg, 
     transparent 0%, 
-    rgba(79, 70, 229, 0.6) 20%, 
-    rgba(124, 58, 237, 0.8) 50%, 
-    rgba(79, 70, 229, 0.6) 80%, 
+    rgba(79, 70, 229, 0.5) 25%, 
+    rgba(124, 58, 237, 0.5) 75%, 
     transparent 100%
   );
-  border-radius: 1px;
-  z-index: 999;
+  box-shadow: 0 0 10px rgba(79, 70, 229, 0.3);
 `;
+
+const ConfirmationOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(10px);
+`;
+
+const ConfirmationDialog = styled.div`
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border: 2px solid #dc2626;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 50px rgba(220, 38, 38, 0.3);
+`;
+
+const ConfirmationTitle = styled.h3`
+  color: #dc2626;
+  margin: 0 0 16px 0;
+  font-size: 1.2rem;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(220, 38, 38, 0.5);
+`;
+
+const ConfirmationText = styled.p`
+  color: #fff;
+  margin: 0 0 20px 0;
+  text-align: center;
+  line-height: 1.5;
+`;
+
+const ConfirmationButtons = styled.div`
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+`;
+
+const ConfirmButton = styled.button`
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    transform: translateY(-1px);
+  }
+`;
+
+const CancelButton = styled.button`
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+  }
+`;;
 
 const ContentWrapper = styled.div`
   position: absolute;
@@ -174,6 +261,8 @@ const SelectorButton = styled.button`
   const [walletSetup, setWalletSetup] = useState(false);
   const [walletData, setWalletData] = useState(null);
   const [showWalletSetup, setShowWalletSetup] = useState(false);
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
   const [userProgress, setUserProgress] = useState({
     completedNodes: [],
     currentLevel: 1,
@@ -185,19 +274,45 @@ const SelectorButton = styled.button`
     { id: 'enhanced-chat', name: 'Assistant', component: EnhancedChatInterface },
     { id: 'gamified-hub', name: 'Gaming Hub', component: GamifiedLearningHub },
     { id: 'story-mode', name: 'Story Mode', component: StoryModeLearning },
+    { id: 'migrate-points', name: 'Migrate Points', component: MigratePointDashboard },
     { id: 'dashboard', name: 'Dashboard', component: InteractiveDashboard },
     { id: 'playground', name: 'Playground', component: HandsOnPlayground },
     { id: 'ar-vr', name: 'AR/VR Style', component: ARVRInterface }
   ];
 
   const handleWalletClick = () => {
-    // Show the wallet setup UI that we created for AI tutor
-    setShowWalletSetup(true);
+    if (walletConnected) {
+      // If connected, show confirmation before removing wallet
+      setShowRemoveConfirmation(true);
+    } else {
+      // If not connected, always show wallet setup UI
+      // This allows users to create new wallet, import wallet, or connect existing wallet
+      setShowWalletSetup(true);
+    }
+  };
+
+  const handleWalletDisconnect = () => {
+    // Completely remove wallet - clear all data and states
+    setWalletConnected(false);
+    setWalletSetup(false);
+    setWalletData(null);
+    setShowRemoveConfirmation(false);
+    
+    // Remove all wallet data from localStorage
+    localStorage.removeItem('ccube_ai_wallet');
+    localStorage.removeItem('ccube_ai_wallet_connected');
+    
+    console.log('C-Cube Wallet completely removed from AI Tutor');
+  };
+
+  const handleCancelRemove = () => {
+    setShowRemoveConfirmation(false);
   };
 
   const handleWalletSetup = (newWalletData) => {
     setWalletData(newWalletData);
     setWalletSetup(true);
+    setWalletConnected(true); // Auto-connect after setup
     setShowWalletSetup(false); // Hide wallet setup after completion
     // Optionally save to localStorage for persistence
     localStorage.setItem('ccube_ai_wallet', JSON.stringify(newWalletData));
@@ -210,29 +325,43 @@ const SelectorButton = styled.button`
   // Check for existing wallet on component mount
   useEffect(() => {
     const savedWallet = localStorage.getItem('ccube_ai_wallet');
+    const savedConnectionState = localStorage.getItem('ccube_ai_wallet_connected');
+    
     if (savedWallet) {
       try {
         const walletInfo = JSON.parse(savedWallet);
         setWalletData(walletInfo);
         setWalletSetup(true);
+        
+        // Restore connection state (default to true if wallet exists)
+        const isConnected = savedConnectionState ? JSON.parse(savedConnectionState) : false;
+        setWalletConnected(isConnected);
       } catch (err) {
         console.error('Error loading saved wallet:', err);
         localStorage.removeItem('ccube_ai_wallet');
+        localStorage.removeItem('ccube_ai_wallet_connected');
       }
     }
   }, []);
+
+  // Save connection state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('ccube_ai_wallet_connected', JSON.stringify(walletConnected));
+  }, [walletConnected]);
 
   const getCurrentInterface = () => {
     const selectedInterface = interfaces.find(i => i.id === activeInterface);
     return selectedInterface ? selectedInterface.component : EnhancedChatInterface;
   };
 
-  const CurrentComponent = getCurrentInterface();  // Show wallet setup prompt if wallet is not set up OR if user clicked wallet button
-  if (!walletSetup || showWalletSetup) {
+  const CurrentComponent = getCurrentInterface();
+  
+  // Show wallet setup prompt only if explicitly requested (not on first load)
+  if (showWalletSetup) {
     return (
       <WalletSetupPrompt 
         onWalletSetup={handleWalletSetup}
-        onClose={walletSetup ? handleCloseWalletSetup : null} // Only show close if wallet already exists
+        onClose={handleCloseWalletSetup}
         existingWallet={walletSetup ? walletData : null}
       />
     );
@@ -242,11 +371,21 @@ const SelectorButton = styled.button`
     <LearnAIContainer>
       <HeaderContainer>
         <LeftSection>
-          <CCubeWalletButton onClick={handleWalletClick}>
-            💳 C-Cube Wallet
+          <CCubeWalletButton connected={walletConnected} onClick={handleWalletClick}>
+            {walletConnected ? '�️ Remove C-Cube Wallet' : '💳 Connect C-Cube Wallet'}
           </CCubeWalletButton>
           <InterfaceTitle>
             🧠 Learn AI - Blockchain Fundamentals
+            {walletConnected && walletData && (
+              <span style={{ 
+                fontSize: '0.7rem', 
+                color: '#10b981', 
+                marginLeft: '8px',
+                opacity: 0.8 
+              }}>
+                • Wallet Connected ({walletData.address ? `${walletData.address.slice(0, 6)}...${walletData.address.slice(-4)}` : 'Ready'})
+              </span>
+            )}
           </InterfaceTitle>
         </LeftSection>
         
@@ -275,6 +414,33 @@ const SelectorButton = styled.button`
           walletData={walletData}
         />
       </ContentWrapper>
+
+      {/* Wallet Removal Confirmation Dialog */}
+      {showRemoveConfirmation && (
+        <ConfirmationOverlay>
+          <ConfirmationDialog>
+            <ConfirmationTitle>⚠️ Remove Wallet</ConfirmationTitle>
+            <ConfirmationText>
+              Are you sure you want to remove your C-Cube wallet from the AI Tutor? 
+              <br /><br />
+              <strong>This will permanently delete:</strong>
+              <br />• Your wallet connection
+              <br />• Stored wallet data
+              <br />• Learning progress tied to this wallet
+              <br /><br />
+              Make sure you have your seed phrase/private key saved if you want to import this wallet again later.
+            </ConfirmationText>
+            <ConfirmationButtons>
+              <ConfirmButton onClick={handleWalletDisconnect}>
+                🗑️ Yes, Remove Wallet
+              </ConfirmButton>
+              <CancelButton onClick={handleCancelRemove}>
+                ✕ Cancel
+              </CancelButton>
+            </ConfirmationButtons>
+          </ConfirmationDialog>
+        </ConfirmationOverlay>
+      )}
     </LearnAIContainer>
   );
 };

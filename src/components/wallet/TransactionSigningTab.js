@@ -267,7 +267,7 @@ const TransactionSigningTab = ({
                   setTokenAddress(address);
                   
                   // Reset token info when address changes
-                  if (!ethers.utils.isAddress(address)) {
+                  if (!ethers.isAddress(address)) {
                     setTokenSymbol('');
                     setTokenDecimals(18);
                   }
@@ -280,7 +280,7 @@ const TransactionSigningTab = ({
                 <Button 
                   onClick={async () => {
                     try {
-                      if (!ethers.utils.isAddress(tokenAddress)) {
+                      if (!ethers.isAddress(tokenAddress)) {
                         throw new Error('Invalid token address');
                       }
                       
@@ -326,7 +326,7 @@ const TransactionSigningTab = ({
                         setSuccess(`Connecting to ${network.name}...`);
                         
                         try {
-                          const provider = new ethers.providers.JsonRpcProvider(network.rpcUrl);
+                          const provider = new ethers.JsonRpcProvider(network.rpcUrl);
                           
                           const minimalAbi = [
                             "function name() view returns (string)",
@@ -411,7 +411,7 @@ const TransactionSigningTab = ({
                 <Button 
                   onClick={() => {
                     try {
-                      if (!ethers.utils.isAddress(tokenAddress)) {
+                      if (!ethers.isAddress(tokenAddress)) {
                         setError('Invalid token address');
                         return;
                       }

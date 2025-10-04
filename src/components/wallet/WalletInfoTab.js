@@ -52,13 +52,13 @@ const WalletInfoTab = ({
     setIsLoading(true);
     
     try {
-      const provider = new ethers.providers.JsonRpcProvider(currentNetwork.rpcUrl);
+      const provider = new ethers.JsonRpcProvider(currentNetwork.rpcUrl);
       
       if (selectedAsset === 'native') {
         console.log('Fetching native balance...');
         // Fetch native token balance
         const balance = await provider.getBalance(activeWallet.address);
-        const formattedBalance = ethers.utils.formatEther(balance);
+        const formattedBalance = ethers.formatEther(balance);
         console.log('Native balance:', formattedBalance);
         setNativeBalance(parseFloat(formattedBalance).toFixed(4));
       } else if (selectedAsset.startsWith('token-')) {
@@ -77,7 +77,7 @@ const WalletInfoTab = ({
           
           const balance = await tokenContract.balanceOf(activeWallet.address);
           const decimals = await tokenContract.decimals();
-          const formattedBalance = ethers.utils.formatUnits(balance, decimals);
+          const formattedBalance = ethers.formatUnits(balance, decimals);
           console.log('Token balance:', formattedBalance);
           setTokenBalance(parseFloat(formattedBalance).toFixed(4));
         } else {

@@ -1393,7 +1393,7 @@ const ColdWallet = ({ onNavigate }) => {
     setLoadingBalances(prev => ({ ...prev, [balanceKey]: true }));
 
     try {
-      const provider = new ethers.providers.JsonRpcProvider(network.rpcUrl);
+      const provider = new ethers.JsonRpcProvider(network.rpcUrl);
       
       const tokenContract = new ethers.Contract(
         token.address,
@@ -1403,7 +1403,7 @@ const ColdWallet = ({ onNavigate }) => {
       
       const balance = await tokenContract.balanceOf(activeWallet.address);
       const decimals = await tokenContract.decimals();
-      const formattedBalance = ethers.utils.formatUnits(balance, decimals);
+      const formattedBalance = ethers.formatUnits(balance, decimals);
       const finalBalance = parseFloat(formattedBalance).toFixed(4);
       
       setTokenBalances(prev => ({ ...prev, [balanceKey]: finalBalance }));
@@ -1483,7 +1483,7 @@ const ColdWallet = ({ onNavigate }) => {
     setSuccess(`Discovering actual tokens in your wallet...`);
     
     try {
-      const provider = new ethers.providers.JsonRpcProvider(currentNetwork.rpcUrl);
+      const provider = new ethers.JsonRpcProvider(currentNetwork.rpcUrl);
       let totalDiscovered = 0;
       const discoveredTokens = new Set();
       
@@ -1605,7 +1605,7 @@ const ColdWallet = ({ onNavigate }) => {
                 tokenContract.name().catch(() => tokenInfo.name)
               ]);
               
-              const formattedBalance = ethers.utils.formatUnits(balance, decimals);
+              const formattedBalance = ethers.formatUnits(balance, decimals);
               console.log(`✅ FOUND TOKEN WITH BALANCE: ${symbol} - ${formattedBalance}`);
               discoveredTokens.add(tokenInfo.address.toLowerCase());
               
@@ -1653,12 +1653,12 @@ const ColdWallet = ({ onNavigate }) => {
         const startBlock = Math.max(0, currentBlock - blocksToScan);
         
         // ERC-20 Transfer event topic
-        const transferTopic = ethers.utils.id("Transfer(address,address,uint256)");
-        const paddedAddress = ethers.utils.hexZeroPad(activeWallet.address, 32);
+        const transferTopic = ethers.id("Transfer(address,address,uint256)");
+        const paddedAddress = ethers.zeroPadValue(activeWallet.address, 32);
         
         // Try a very limited scan
         const filter = {
-          fromBlock: ethers.utils.hexlify(startBlock),
+          fromBlock: ethers.toBeHex(startBlock),
           toBlock: 'latest',
           topics: [transferTopic, null, paddedAddress] // tokens TO this wallet
         };
@@ -1751,7 +1751,7 @@ const ColdWallet = ({ onNavigate }) => {
                 tokenContract.name().catch(() => 'Unknown Token')
               ]);
               
-              const formattedBalance = ethers.utils.formatUnits(balance, decimals);
+              const formattedBalance = ethers.formatUnits(balance, decimals);
               console.log(`✅ ADDITIONAL TOKEN: ${symbol} - ${formattedBalance}`);
               
               await addToken({
@@ -1848,7 +1848,7 @@ const ColdWallet = ({ onNavigate }) => {
       console.log(`🌐 Scanning ${currentNetwork.name} for popular tokens...`);
       
       try {
-        const provider = new ethers.providers.JsonRpcProvider(currentNetwork.rpcUrl);
+        const provider = new ethers.JsonRpcProvider(currentNetwork.rpcUrl);
         
         // Get popular token contract addresses for the current network
         const popularTokens = getPopularTokensForNetwork(currentNetwork.id);
@@ -1897,7 +1897,7 @@ const ColdWallet = ({ onNavigate }) => {
                 tokenContract.name()
               ]);
               
-              const formattedBalance = ethers.utils.formatUnits(balance, decimals);
+              const formattedBalance = ethers.formatUnits(balance, decimals);
               console.log(`✅ Found token: ${symbol} (${name}) on ${currentNetwork.name} - Balance: ${formattedBalance}`);
               
               // Add token to the wallet
@@ -2297,7 +2297,7 @@ const ColdWallet = ({ onNavigate }) => {
     
     try {
       // Basic validation
-      if (!ethers.utils.isAddress(txRecipient)) {
+      if (!ethers.isAddress(txRecipient)) {
         throw new Error('Invalid recipient address');
       }
       
@@ -2305,20 +2305,20 @@ const ColdWallet = ({ onNavigate }) => {
       
       if (txType === 'native') {
         // Native coin transfer (ETH, BNB, MATIC, etc.)
-        const amountInWei = ethers.utils.parseEther(txAmount.toString());
+        const amountInWei = ethers.parseEther(txAmount.toString());
         
         txObject = {
           to: txRecipient,
           value: amountInWei,
           data: txData || '0x',
-          gasLimit: ethers.utils.hexlify(21000), // Basic transfer
-          gasPrice: ethers.utils.parseUnits('30', 'gwei'), // Default gas price
+          gasLimit: 21000, // Basic transfer
+          gasPrice: ethers.parseUnits('30', 'gwei'), // Default gas price
           chainId: txNetwork.chainId,
           nonce: 0, // This would normally be fetched from the network
         };
       } else {
         // Token transfer (ERC-20)
-        if (!ethers.utils.isAddress(tokenAddress)) {
+        if (!ethers.isAddress(tokenAddress)) {
           throw new Error('Invalid token contract address');
         }
         
@@ -2327,13 +2327,13 @@ const ColdWallet = ({ onNavigate }) => {
         const transferFunctionSignature = '0xa9059cbb';
         
         // Encode recipient address (padded to 32 bytes)
-        const encodedRecipient = ethers.utils.defaultAbiCoder.encode(
+        const encodedRecipient = ethers.AbiCoder.defaultAbiCoder().encode(
           ['address'], [txRecipient]
         ).slice(2); // Remove '0x' prefix
         
         // Convert token amount to correct decimals and encode
-        const tokenAmount = ethers.utils.parseUnits(txAmount.toString(), tokenDecimals);
-        const encodedAmount = ethers.utils.defaultAbiCoder.encode(
+        const tokenAmount = ethers.parseUnits(txAmount.toString(), tokenDecimals);
+        const encodedAmount = ethers.AbiCoder.defaultAbiCoder().encode(
           ['uint256'], [tokenAmount]
         ).slice(2); // Remove '0x' prefix
         
@@ -2344,8 +2344,8 @@ const ColdWallet = ({ onNavigate }) => {
           to: tokenAddress, // Send to token contract
           value: 0, // No native coin is being sent
           data: data + (txData ? txData.replace(/^0x/, '') : ''),
-          gasLimit: ethers.utils.hexlify(100000), // Token transfers need more gas
-          gasPrice: ethers.utils.parseUnits('30', 'gwei'),
+          gasLimit: 100000, // Token transfers need more gas
+          gasPrice: ethers.parseUnits('30', 'gwei'),
           chainId: txNetwork.chainId,
           nonce: 0, // This would normally be fetched from the network
         };
@@ -2409,8 +2409,8 @@ const ColdWallet = ({ onNavigate }) => {
       // Simulate network request
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // This would normally be returned from the network
-      const txHash = ethers.utils.keccak256(signedTransaction);
+      // This would normally be returned from the network  
+      const txHash = ethers.keccak256(signedTransaction);
       
       setSuccess(`Transaction broadcast successfully! Transaction hash: ${txHash}. Your transaction has been submitted to the ${txNetwork.name} network.`);
       
@@ -4069,7 +4069,7 @@ const ColdWallet = ({ onNavigate }) => {
                         setTokenAddress(address);
                         
                         // Reset token info when address changes
-                        if (!ethers.utils.isAddress(address)) {
+                        if (!ethers.isAddress(address)) {
                           setTokenSymbol('');
                           setTokenDecimals(18);
                         }
@@ -4082,7 +4082,7 @@ const ColdWallet = ({ onNavigate }) => {
                     <Button 
                       onClick={async () => {
                         try {
-                          if (!ethers.utils.isAddress(tokenAddress)) {
+                          if (!ethers.isAddress(tokenAddress)) {
                             throw new Error('Invalid token address');
                           }
                           
@@ -4130,7 +4130,7 @@ const ColdWallet = ({ onNavigate }) => {
                             
                             try {
                               // Create a provider using the network's RPC URL
-                              const provider = new ethers.providers.JsonRpcProvider(network.rpcUrl);
+                              const provider = new ethers.JsonRpcProvider(network.rpcUrl);
                               
                               // Standard ERC-20 ABI for the functions we need
                               const minimalAbi = [
@@ -4228,7 +4228,7 @@ const ColdWallet = ({ onNavigate }) => {
                     <Button 
                       onClick={() => {
                         try {
-                          if (!ethers.utils.isAddress(tokenAddress)) {
+                          if (!ethers.isAddress(tokenAddress)) {
                             setError('Invalid token address');
                             return;
                           }

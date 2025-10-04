@@ -219,14 +219,14 @@ const Broadcast = () => {
     
     try {
       // Parse the transaction
-      const tx = ethers.utils.parseTransaction(signedTransaction);
+      const tx = ethers.Transaction.from(signedTransaction);
       
       setTxDetails({
         from: tx.from,
         to: tx.to,
-        value: ethers.utils.formatEther(tx.value) + ' ETH',
+        value: ethers.formatEther(tx.value) + ' ETH',
         gasLimit: tx.gasLimit.toString(),
-        gasPrice: tx.gasPrice ? ethers.utils.formatUnits(tx.gasPrice, 'gwei') + ' Gwei' : 'N/A',
+        gasPrice: tx.gasPrice ? ethers.formatUnits(tx.gasPrice, 'gwei') + ' Gwei' : 'N/A',
         nonce: tx.nonce,
         data: tx.data,
         chainId: tx.chainId,
@@ -261,7 +261,7 @@ const Broadcast = () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // This would normally be returned from the network
-      const txHash = ethers.utils.keccak256(signedTransaction);
+      const txHash = ethers.keccak256(signedTransaction);
       
       setSuccess(`Transaction broadcast successfully! Transaction hash: ${txHash}`);
       setInfo('Your transaction has been submitted to the network. It may take a few minutes to be included in a block.');

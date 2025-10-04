@@ -73,7 +73,7 @@ const Tab = styled.button`
   background: none;
   border: none;
   padding: 1rem;
-  color: ${({ active }) => active ? '#00cc33' : '#666'};
+  color: ${({ active }) => active ? '#00cc33' : '#ffffff'};
   border-bottom: ${({ active }) => active ? '2px solid #00cc33' : 'none'};
   font-weight: ${({ active }) => active ? 'bold' : 'normal'};
   font-family: 'Courier New', monospace;
@@ -476,7 +476,7 @@ const WalletSetupPrompt = ({ onWalletSetup, onClose, existingWallet }) => {
 
         <InfoText>
           {existingWallet 
-            ? "Manage your C-Cube Tutor wallet. You can view your current wallet or set up additional wallets."
+            ? "You have an existing C-Cube wallet. You can connect your current wallet, or create/import a different one for the AI Tutor."
             : "Welcome to C-Cube AI Tutor! To access the learning features, you need to set up a wallet first. Choose to create a new wallet or import an existing one."
           }
         </InfoText>
@@ -536,11 +536,23 @@ const WalletSetupPrompt = ({ onWalletSetup, onClose, existingWallet }) => {
               ⚠️ This wallet is used for AI Tutor learning progress only. For real transactions, use the main C-Cube wallet.
             </InfoText>
 
-            {onClose && (
-              <Button onClick={onClose}>
-                CONTINUE LEARNING
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <Button 
+                onClick={() => onWalletSetup(existingWallet)}
+                style={{ 
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  borderColor: '#10b981'
+                }}
+              >
+                🔗 CONNECT THIS WALLET
               </Button>
-            )}
+              
+              {onClose && (
+                <Button onClick={onClose}>
+                  ✕ CANCEL
+                </Button>
+              )}
+            </div>
           </>
         )}
 

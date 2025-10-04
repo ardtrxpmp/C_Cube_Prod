@@ -305,41 +305,41 @@ const ColdWallet = () => {
     setSignedTransaction('');
     
     try {
-      if (!ethers.utils.isAddress(txRecipient)) {
+      if (!ethers.isAddress(txRecipient)) {
         throw new Error('Invalid recipient address');
       }
       
       let txObject;
       
       if (txType === 'native') {
-        const amountInWei = ethers.utils.parseEther(txAmount.toString());
+        const amountInWei = ethers.parseEther(txAmount.toString());
         
         txObject = {
           to: txRecipient,
           value: amountInWei,
           data: txData || '0x',
-          gasLimit: ethers.utils.hexlify(21000),
-          gasPrice: ethers.utils.parseUnits('30', 'gwei'),
+          gasLimit: 21000,
+          gasPrice: ethers.parseUnits('30', 'gwei'),
           chainId: txNetwork.chainId,
           nonce: 0,
         };
       } else {
-        if (!ethers.utils.isAddress(tokenAddress)) {
+        if (!ethers.isAddress(tokenAddress)) {
           throw new Error('Invalid token contract address');
         }
         
         const transferFunctionSignature = '0xa9059cbb';
-        const encodedRecipient = ethers.utils.defaultAbiCoder.encode(['address'], [txRecipient]).slice(2);
-        const tokenAmount = ethers.utils.parseUnits(txAmount.toString(), tokenDecimals);
-        const encodedAmount = ethers.utils.defaultAbiCoder.encode(['uint256'], [tokenAmount]).slice(2);
+        const encodedRecipient = ethers.AbiCoder.defaultAbiCoder().encode(['address'], [txRecipient]).slice(2);
+        const tokenAmount = ethers.parseUnits(txAmount.toString(), tokenDecimals);
+        const encodedAmount = ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [tokenAmount]).slice(2);
         const data = `${transferFunctionSignature}${encodedRecipient}${encodedAmount}`;
         
         txObject = {
           to: tokenAddress,
           value: 0,
           data: '0x' + data + (txData ? txData.replace(/^0x/, '') : ''),
-          gasLimit: ethers.utils.hexlify(100000),
-          gasPrice: ethers.utils.parseUnits('30', 'gwei'),
+          gasLimit: 100000,
+          gasPrice: ethers.parseUnits('30', 'gwei'),
           chainId: txNetwork.chainId,
           nonce: 0,
         };

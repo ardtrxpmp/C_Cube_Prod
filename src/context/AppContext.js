@@ -375,7 +375,7 @@ export const AppProvider = ({ children }) => {
         id: Date.now().toString(),
         walletId: wallet.id,
         networkId: wallet.networkId,
-        txHash: ethers.utils.keccak256(signedTx),
+        txHash: ethers.keccak256(signedTx),
         signedTx,
         data: txData,
         status: 'signed',
