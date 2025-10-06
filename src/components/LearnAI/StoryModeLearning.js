@@ -1574,12 +1574,25 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
     const newTotalPoints = totalPoints + 1;
     setTotalPoints(newTotalPoints);
 
-    // Award points to the global system (only for correct answers)
+    // Award points to the global system (only for correct answers and only once per question)
     if (addPoints && isCorrect) {
-      const questionPoints = 5; // Points for correct answers
-      const chapterKey = `chapter${currentChapter + 1}`; // chapter1, chapter2, etc.
-      addPoints('storyMode', chapterKey, questionPoints);
-      console.log(`✅ Correct answer in Chapter ${currentChapter + 1}! Awarded ${questionPoints} points.`);
+      const questionKey = `story-ch${currentChapter + 1}-q${currentQuestion + 1}`;
+      const hasBeenAnswered = userProgress?.completedNodes?.includes(questionKey) || false;
+      
+      if (!hasBeenAnswered) {
+        const questionPoints = 5; // Points for correct answers
+        const chapterKey = `chapter${currentChapter + 1}`; // chapter1, chapter2, etc.
+        addPoints('storyMode', chapterKey, questionPoints);
+        console.log(`✅ First time correct answer in Chapter ${currentChapter + 1}, Question ${currentQuestion + 1}! Awarded ${questionPoints} points.`);
+        
+        // Mark this question as answered correctly
+        setUserProgress(prev => ({
+          ...prev,
+          completedNodes: [...(prev.completedNodes || []), questionKey]
+        }));
+      } else {
+        console.log(`⚠️ Question ${currentQuestion + 1} in Chapter ${currentChapter + 1} already answered correctly - no additional points.`);
+      }
     }
     
     // Check for milestones and show appropriate animation
@@ -1612,12 +1625,25 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedChoice(null);
     } else if (currentChapter < storyChapters.length - 1) {
-      // Chapter completed! Award points before moving to next chapter
+      // Chapter completed! Award points before moving to next chapter (only once per chapter)
       if (addPoints) {
-        const chapterPoints = 50; // Points for completing a chapter
-        const chapterKey = `chapter${currentChapter + 1}`; // chapter1, chapter2, etc.
-        addPoints('storyMode', chapterKey, chapterPoints);
-        console.log(`📖 Chapter ${currentChapter + 1} completed! Awarded ${chapterPoints} points.`);
+        const chapterCompletionKey = `story-chapter${currentChapter + 1}-completed`;
+        const hasBeenCompleted = userProgress?.completedNodes?.includes(chapterCompletionKey) || false;
+        
+        if (!hasBeenCompleted) {
+          const chapterPoints = 50; // Points for completing a chapter
+          const chapterKey = `chapter${currentChapter + 1}`; // chapter1, chapter2, etc.
+          addPoints('storyMode', chapterKey, chapterPoints);
+          console.log(`📖 Chapter ${currentChapter + 1} completed for first time! Awarded ${chapterPoints} points.`);
+          
+          // Mark this chapter as completed
+          setUserProgress(prev => ({
+            ...prev,
+            completedNodes: [...(prev.completedNodes || []), chapterCompletionKey]
+          }));
+        } else {
+          console.log(`⚠️ Chapter ${currentChapter + 1} already completed - no additional points.`);
+        }
       }
 
       // Next chapter
@@ -1625,12 +1651,25 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
       setCurrentQuestion(0);
       setSelectedChoice(null);
     } else {
-      // Final chapter completed!
+      // Final chapter completed! (only award points once)
       if (addPoints) {
-        const finalChapterPoints = 75; // Extra points for final chapter
-        const finalChapterKey = `chapter${currentChapter + 1}`;
-        addPoints('storyMode', finalChapterKey, finalChapterPoints);
-        console.log(`🏆 Final chapter (${currentChapter + 1}) completed! Awarded ${finalChapterPoints} points.`);
+        const finalChapterCompletionKey = `story-final-chapter-completed`;
+        const hasBeenCompleted = userProgress?.completedNodes?.includes(finalChapterCompletionKey) || false;
+        
+        if (!hasBeenCompleted) {
+          const finalChapterPoints = 75; // Extra points for final chapter
+          const finalChapterKey = `chapter${currentChapter + 1}`;
+          addPoints('storyMode', finalChapterKey, finalChapterPoints);
+          console.log(`🏆 Final chapter (${currentChapter + 1}) completed for first time! Awarded ${finalChapterPoints} points.`);
+          
+          // Mark final chapter as completed
+          setUserProgress(prev => ({
+            ...prev,
+            completedNodes: [...(prev.completedNodes || []), finalChapterCompletionKey]
+          }));
+        } else {
+          console.log(`⚠️ Final chapter already completed - no additional points.`);
+        }
       }
     }
   };
