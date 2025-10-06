@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Points Persistence Test</title>
+</head>
+<body>
+    <h1>C-Cube Points Persistence Test</h1>
+    
+    <div>
+        <h2>Current Points in SessionStorage:</h2>
+        <pre id="current-points">Loading...</pre>
+    </div>
+    
+    <div>
+        <h2>Test Actions:</h2>
+        <button onclick="addTestPoints()">Add Test Points (Gaming Hub: 100, Story Mode: 50)</button>
+        <button onclick="clearPoints()">Clear All Points</button>
+        <button onclick="refreshPoints()">Refresh Display</button>
+    </div>
+    
+    <div>
+        <h2>Simulation:</h2>
+        <button onclick="simulateNavigation()">Simulate Navigation to Migrate Points</button>
+    </div>
+
+    <script>
+        function refreshPoints() {
+            const savedPoints = sessionStorage.getItem('ccube_user_points');
+            const display = document.getElementById('current-points');
+            
+            if (savedPoints) {
+                try {
+                    const points = JSON.parse(savedPoints);
+                    display.textContent = JSON.stringify(points, null, 2);
+                } catch (e) {
+                    display.textContent = 'Error parsing points: ' + e.message;
+                }
+            } else {
+                display.textContent = 'No points found in sessionStorage';
+            }
+        }
+        
+        function addTestPoints() {
+            const testPoints = {
+                total: 150,
+                gamingHub: {
+                    blockchainBasics: 100,
+                    smartContracts: 0,
+                    defiProtocols: 0,
+                    nftsWeb3: 0
+                },
+                storyMode: {
+                    chapter1: 50,
+                    chapter2: 0,
+                    chapter3: 0,
+                    chapter4: 0,
+                    chapter5: 0,
+                    chapter6: 0,
+                    chapter7: 0,
+                    chapter8: 0
+                },
+                achievements: 0
+            };
+            
+            sessionStorage.setItem('ccube_user_points', JSON.stringify(testPoints));
+            console.log('Added test points:', testPoints);
+            alert('Test points added! Check the display.');
+            refreshPoints();
+        }
+        
+        function clearPoints() {
+            sessionStorage.removeItem('ccube_user_points');
+            console.log('Cleared all points from sessionStorage');
+            alert('Points cleared!');
+            refreshPoints();
+        }
+        
+        function simulateNavigation() {
+            // This simulates what happens when navigating to the migrate points section
+            const savedPoints = sessionStorage.getItem('ccube_user_points');
+            console.log('Simulating navigation - found points:', savedPoints);
+            
+            if (savedPoints) {
+                try {
+                    const pointsData = JSON.parse(savedPoints);
+                    console.log('Points would load as:', pointsData);
+                    alert('Navigation simulation: Points would load correctly!\nTotal: ' + pointsData.total);
+                } catch (e) {
+                    console.error('Error in navigation simulation:', e);
+                    alert('Navigation simulation failed: ' + e.message);
+                }
+            } else {
+                alert('Navigation simulation: No points found - this is the problem!');
+            }
+        }
+        
+        // Auto-refresh on page load
+        refreshPoints();
+        
+        // Refresh every 2 seconds to see real-time changes
+        setInterval(refreshPoints, 2000);
+    </script>
+</body>
+</html>

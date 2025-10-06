@@ -610,7 +610,7 @@ const FeedbackMessage = styled.div`
   }
 `;
 
-const GamifiedLearningHub = ({ userProgress, setUserProgress }) => {
+const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
   const [activeQuest, setActiveQuest] = useState(null);
   const [playerLevel, setPlayerLevel] = useState(1);
   const [playerXP, setPlayerXP] = useState(0);
@@ -996,6 +996,28 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress }) => {
             ...prev,
             completedNodes: [...prev.completedNodes, challengeCompletedKey]
           }));
+
+          // Award points for completing individual challenges
+          if (addPoints) {
+            const challengePoints = 25; // Smaller points for individual challenges
+            switch (activeQuest.id) {
+              case 'blockchain-basics':
+                addPoints('gamingHub', 'blockchainBasics', challengePoints);
+                break;
+              case 'crypto-security':
+                addPoints('gamingHub', 'smartContracts', challengePoints);
+                break;
+              case 'defi-explorer':
+                addPoints('gamingHub', 'defiProtocols', challengePoints);
+                break;
+              case 'nft-creator':
+                addPoints('gamingHub', 'nftsWeb3', challengePoints);
+                break;
+              default:
+                addPoints('gamingHub', 'blockchainBasics', challengePoints);
+            }
+            console.log(`✅ Challenge ${currentChallengeIndex + 1} of "${activeQuest.title}" completed! Awarded ${challengePoints} points.`);
+          }
         }
       }
       
@@ -1013,6 +1035,28 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress }) => {
             ...prev,
             completedNodes: [...prev.completedNodes, finalChallengeKey]
           }));
+
+          // Award points for completing the final challenge
+          if (addPoints) {
+            const finalChallengePoints = 50; // Higher points for final challenge
+            switch (activeQuest.id) {
+              case 'blockchain-basics':
+                addPoints('gamingHub', 'blockchainBasics', finalChallengePoints);
+                break;
+              case 'crypto-security':
+                addPoints('gamingHub', 'smartContracts', finalChallengePoints);
+                break;
+              case 'defi-explorer':
+                addPoints('gamingHub', 'defiProtocols', finalChallengePoints);
+                break;
+              case 'nft-creator':
+                addPoints('gamingHub', 'nftsWeb3', finalChallengePoints);
+                break;
+              default:
+                addPoints('gamingHub', 'blockchainBasics', finalChallengePoints);
+            }
+            console.log(`🏁 Final challenge of "${activeQuest.title}" completed! Awarded ${finalChallengePoints} points.`);
+          }
         }
       }
       
@@ -1028,6 +1072,33 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress }) => {
           ...prev,
           completedNodes: [...prev.completedNodes, questCompletedKey]
         }));
+
+        // Award points for quest completion
+        if (addPoints) {
+          let pointsAwarded = 0;
+          switch (activeQuest.id) {
+            case 'blockchain-basics':
+              pointsAwarded = 150;
+              addPoints('gamingHub', 'blockchainBasics', pointsAwarded);
+              break;
+            case 'crypto-security':
+              pointsAwarded = 200;
+              addPoints('gamingHub', 'smartContracts', pointsAwarded);
+              break;
+            case 'defi-explorer':
+              pointsAwarded = 180;
+              addPoints('gamingHub', 'defiProtocols', pointsAwarded);
+              break;
+            case 'nft-creator':
+              pointsAwarded = 220;
+              addPoints('gamingHub', 'nftsWeb3', pointsAwarded);
+              break;
+            default:
+              pointsAwarded = 100; // Default points for any other quest
+              addPoints('gamingHub', 'blockchainBasics', pointsAwarded);
+          }
+          console.log(`🎉 Quest "${activeQuest.title}" completed! Awarded ${pointsAwarded} points.`);
+        }
         
         // Show celebration instead of regular feedback
         setCelebrationData({

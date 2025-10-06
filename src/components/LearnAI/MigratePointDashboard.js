@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styled, { keyframes } from 'styled-components';
 
 const fadeIn = keyframes`
@@ -83,147 +83,142 @@ const StatDescription = styled.div`
   font-size: 0.9rem;
 `;
 
-const SectionContainer = styled.div`
-  margin-bottom: 30px;
-`;
-
-const SectionTitle = styled.h2`
-  color: white;
-  font-size: 1.8rem;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-`;
-
-const SectionIcon = styled.span`
-  font-size: 1.5rem;
-`;
-
-const CategoryGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 20px;
-  margin-bottom: 20px;
-`;
-
-const CategoryCard = styled.div`
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(124, 58, 237, 0.05));
+const BlockchainStatusCard = styled.div`
+  background: rgba(79, 70, 229, 0.1);
   border: 1px solid rgba(79, 70, 229, 0.3);
   border-radius: 12px;
   padding: 20px;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-    border-color: rgba(79, 70, 229, 0.5);
-    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.2);
-  }
+  margin-bottom: 20px;
+  text-align: center;
 `;
 
-const CategoryHeader = styled.div`
+const StatusIndicator = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-`;
-
-const CategoryName = styled.h3`
-  color: white;
-  font-size: 1.2rem;
-  margin: 0;
-`;
-
-const CategoryPoints = styled.div`
-  background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.9rem;
-`;
-
-const ItemsList = styled.div`
-  display: flex;
-  flex-direction: column;
+  justify-content: center;
   gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: ${props => {
+    switch (props.type) {
+      case 'success': return '#10b981';
+      case 'error': return '#ef4444';
+      case 'info': return '#3b82f6';
+      default: return '#6b7280';
+    }
+  }};
 `;
 
-const ItemRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    background: rgba(255, 255, 255, 0.08);
-  }
-`;
-
-const ItemName = styled.span`
+const StatusMessage = styled.div`
   color: #e2e8f0;
   font-size: 0.9rem;
-`;
-
-const ItemPoints = styled.span`
-  color: #10b981;
-  font-weight: 600;
-  font-size: 0.9rem;
-`;
-
-const ChapterGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
-`;
-
-const ChapterCard = styled.div`
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 95, 70, 0.05));
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: 12px;
-  padding: 16px;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-    border-color: rgba(16, 185, 129, 0.5);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.2);
-  }
-`;
-
-const ChapterHeader = styled.div`
-  display: flex;
-  justify-content: between;
-  align-items: center;
   margin-bottom: 12px;
 `;
 
-const ChapterName = styled.h4`
-  color: white;
-  font-size: 1rem;
-  margin: 0;
-  flex: 1;
+const BlockchainInfo = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
 `;
 
-const ChapterStatus = styled.div`
-  background: ${props => props.completed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(156, 163, 175, 0.2)'};
-  color: ${props => props.completed ? '#10b981' : '#9ca3af'};
-  padding: 4px 8px;
+const InfoItem = styled.div`
+  text-align: center;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
   border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
 `;
 
-const ChapterPoints = styled.div`
+const InfoLabel = styled.div`
+  color: #9ca3af;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+`;
+
+const InfoValue = styled.div`
   color: #10b981;
   font-weight: 600;
+  font-size: 0.9rem;
+`;
+
+const TokenInfoCard = styled.div`
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 191, 36, 0.05));
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+`;
+
+const TokenInfoTitle = styled.h3`
+  color: #fbbf24;
   font-size: 1.1rem;
-  text-align: center;
-  margin-top: 8px;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ContractAddress = styled.div`
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: #10b981;
+  word-break: break-all;
+  margin: 8px 0;
+  position: relative;
+`;
+
+const CopyButton = styled.button`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(245, 158, 11, 0.3);
+  }
+`;
+
+const TokenInstructions = styled.div`
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 12px;
+`;
+
+const InstructionStep = styled.div`
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+`;
+
+const StepNumber = styled.span`
+  background: #3b82f6;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: bold;
+  flex-shrink: 0;
+  margin-top: 2px;
 `;
 
 const MigrateButtonContainer = styled.div`
@@ -231,6 +226,8 @@ const MigrateButtonContainer = styled.div`
   justify-content: center;
   margin-top: 40px;
   padding: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
 `;
 
 const MigrateButton = styled.button`
@@ -270,90 +267,263 @@ const MigrateButton = styled.button`
   }
 `;
 
-const MigratePointDashboard = ({ userProgress, walletData }) => {
-  const [totalPoints, setTotalPoints] = useState(0);
-  const [gamePoints, setGamePoints] = useState(0);
-  const [storyPoints, setStoryPoints] = useState(0);
-  const [achievementPoints, setAchievementPoints] = useState(0);
-
-  // Mock data for gaming categories and their points
-  const gamingCategories = [
-    {
-      name: "Blockchain Basics",
-      points: 450,
-      items: [
-        { name: "What is Blockchain?", points: 100 },
-        { name: "Cryptographic Hashing", points: 150 },
-        { name: "Consensus Mechanisms", points: 200 }
-      ]
-    },
-    {
-      name: "Smart Contracts",
-      points: 380,
-      items: [
-        { name: "Contract Fundamentals", points: 120 },
-        { name: "Solidity Basics", points: 130 },
-        { name: "Contract Deployment", points: 130 }
-      ]
-    },
-    {
-      name: "DeFi Protocols",
-      points: 520,
-      items: [
-        { name: "Lending & Borrowing", points: 180 },
-        { name: "DEX Mechanisms", points: 170 },
-        { name: "Yield Farming", points: 170 }
-      ]
-    },
-    {
-      name: "NFTs & Web3",
-      points: 290,
-      items: [
-        { name: "NFT Standards", points: 100 },
-        { name: "Metadata & IPFS", points: 90 },
-        { name: "Web3 Integration", points: 100 }
-      ]
+const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoints }) => {
+  // Enhanced debugging and fallback system
+  const [debugInfo, setDebugInfo] = useState({});
+  
+  // Migration state - MOVED UP to be declared before useMemo
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
+  const [migrationStatus, setMigrationStatus] = useState(null);
+  const [userTokenBalance, setUserTokenBalance] = useState('0');
+  const [forceRefresh, setForceRefresh] = useState(0);
+  
+  // Real-time data from user progress with more robust fallback
+  const points = useMemo(() => {
+    console.log('🔍 MigratePointDashboard - Computing points...');
+    console.log('📊 userProgress received:', userProgress);
+    console.log('📊 userProgress.points:', userProgress?.points);
+    
+    // Check localStorage directly as backup
+    const savedPoints = localStorage.getItem('ccube_user_points');
+    console.log('💾 localStorage points:', savedPoints);
+    
+    let finalPoints;
+    
+    if (userProgress?.points) {
+      // Use userProgress points if available
+      finalPoints = userProgress.points;
+      console.log('✅ Using userProgress.points');
+    } else if (savedPoints) {
+      // Fallback to localStorage if userProgress.points is missing
+      try {
+        finalPoints = JSON.parse(savedPoints);
+        console.log('⚠️ Fallback to localStorage points');
+      } catch (e) {
+        console.error('❌ Error parsing localStorage points:', e);
+        finalPoints = null;
+      }
     }
-  ];
+    
+    // Final fallback to default structure
+    if (!finalPoints) {
+      finalPoints = {
+        total: 0,
+        gamingHub: { blockchainBasics: 0, smartContracts: 0, defiProtocols: 0, nftsWeb3: 0 },
+        storyMode: { chapter1: 0, chapter2: 0, chapter3: 0, chapter4: 0, chapter5: 0, chapter6: 0, chapter7: 0, chapter8: 0 },
+        achievements: 0
+      };
+      console.log('🔄 Using default fallback points');
+    }
+    
+    console.log('🎯 Final computed points:', finalPoints);
+    return finalPoints;
+  }, [userProgress, forceRefresh]);
 
-  // Mock data for story mode chapters
-  const storyChapters = [
-    { name: "Chapter 1: Genesis Block", points: 200, completed: true },
-    { name: "Chapter 2: The Mining Quest", points: 250, completed: true },
-    { name: "Chapter 3: Smart Contract Wars", points: 300, completed: false },
-    { name: "Chapter 4: DeFi Revolution", points: 350, completed: false },
-    { name: "Chapter 5: NFT Kingdom", points: 280, completed: false },
-    { name: "Chapter 6: Layer 2 Solutions", points: 320, completed: false },
-    { name: "Chapter 7: Cross-Chain Bridges", points: 400, completed: false },
-    { name: "Chapter 8: The Future of Web3", points: 450, completed: false }
-  ];
-
+  // Debug logging
   useEffect(() => {
-    // Calculate total points from gaming categories
-    const totalGamePoints = gamingCategories.reduce((sum, category) => sum + category.points, 0);
-    
-    // Calculate total points from completed story chapters
-    const totalStoryPoints = storyChapters
-      .filter(chapter => chapter.completed)
-      .reduce((sum, chapter) => sum + chapter.points, 0);
-    
-    // Mock achievement points
-    const totalAchievementPoints = 750;
-    
-    setGamePoints(totalGamePoints);
-    setStoryPoints(totalStoryPoints);
-    setAchievementPoints(totalAchievementPoints);
-    setTotalPoints(totalGamePoints + totalStoryPoints + totalAchievementPoints);
-  }, []);
+    const info = {
+      userProgressExists: !!userProgress,
+      userProgressPointsExists: !!(userProgress?.points),
+      localStoragePoints: localStorage.getItem('ccube_user_points'),
+      computedPointsTotal: points.total,
+      timestamp: new Date().toISOString()
+    };
+    setDebugInfo(info);
+    console.log('🐛 MigratePointDashboard Debug Info:', info);
+  }, [userProgress, points]);
 
-  const handleMigrate = () => {
+  // Contract address (from deployment results)
+  const CONTRACT_ADDRESS = "0x4b35C661652700953A8E23704AE6211D447C412A";
+
+  const checkTokenBalance = async (address) => {
+    try {
+      const apiEndpoint = process.env.REACT_APP_API_ENDPOINT || 'http://localhost:3001';
+      const response = await fetch(`${apiEndpoint}/user/${address}/balance`);
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setUserTokenBalance(result.data.balance);
+          return result.data.balance;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to check token balance:', error);
+    }
+    return '0';
+  };
+
+  // Initialize migration system when wallet is connected
+  useEffect(() => {
+    const initializeMigration = async () => {
+      if (walletData) {
+        setIsConnecting(true);
+        await checkTokenBalance(walletData.address);
+        setTimeout(() => setIsConnecting(false), 1000);
+      }
+    };
+
+    initializeMigration();
+  }, [walletData]);
+
+  const handleMigrate = async () => {
     if (!walletData) {
       alert("Please connect your C-Cube wallet first to migrate points!");
       return;
     }
     
-    // Mock migration process
-    alert(`Migrating ${totalPoints} points to your C-Cube wallet: ${walletData.address?.slice(0, 6)}...${walletData.address?.slice(-4)}\n\nMigration will be processed on the blockchain shortly!`);
+    if (points.total === 0) {
+      alert("No points available to migrate! Answer some questions to earn points first.");
+      return;
+    }
+
+    try {
+      setIsMigrating(true);
+      setMigrationStatus({ type: 'info', message: 'Preparing migration...' });
+
+      const estimatedTokenAmount = points.total / 1000;
+
+      const confirmed = window.confirm(
+        `🚀 Point Migration to C-Cube Wallet\n\n` +
+        `Points to migrate: ${points.total.toLocaleString()}\n` +
+        `Estimated tokens: ${estimatedTokenAmount.toFixed(6)} LCUBE\n` +
+        `Your C-Cube wallet: ${walletData.address?.slice(0, 6)}...${walletData.address?.slice(-4)}\n\n` +
+        `⚠️ This will:\n` +
+        `• Send LCUBE tokens to your connected C-Cube wallet\n` +
+        `• Reset your session points to 0\n` +
+        `• Process transaction on the blockchain\n\n` +
+        `Continue with migration?`
+      );
+
+      if (!confirmed) {
+        setMigrationStatus(null);
+        setIsMigrating(false);
+        return;
+      }
+
+      setMigrationStatus({ type: 'info', message: 'Sending to blockchain...' });
+
+      const migrationSession = {
+        sessionId: `ccube_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: Date.now(),
+        points: points.total,
+        userAddress: walletData.address,
+        walletType: 'ccube'
+      };
+
+      const apiEndpoint = process.env.REACT_APP_API_ENDPOINT || 'http://localhost:3001';
+      
+      setMigrationStatus({ type: 'info', message: 'Processing migration request...' });
+
+      const response = await fetch(`${apiEndpoint}/migrate-points`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userAddress: walletData.address,
+          points: points.total,
+          sessionData: migrationSession,
+          walletType: 'ccube',
+          walletData: {
+            address: walletData.address,
+            privateKey: walletData.privateKey // Use connected wallet's private key for minting
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Migration request failed');
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        const tokensReceived = result.data.tokensReceived || (points.total / 1000).toFixed(6);
+        const contractAddress = result.data.contractAddress || CONTRACT_ADDRESS;
+        
+        setMigrationStatus({ 
+          type: 'success', 
+          message: `✅ Migration successful! ${tokensReceived} LCUBE sent to your C-Cube wallet`,
+          txHash: result.data.txHash
+        });
+
+        setUserTokenBalance(tokensReceived);
+
+        const successMessage = `🎉 Migration Complete!\n\n` +
+          `✅ ${tokensReceived} LCUBE tokens minted to your wallet\n` +
+          `📍 Wallet: ${walletData.address}\n` +
+          `🔗 Contract: ${contractAddress}\n` +
+          `⛽ Transaction: ${result.data.txHash || 'Pending'}\n\n` +
+          `� IMPORTANT: To see your tokens in wallet apps:\n` +
+          `Your tokens are already in your wallet on the blockchain,\n` +
+          `but you need to ADD THE TOKEN manually to see them!\n\n` +
+          `📱 Steps to add LCUBE token:\n` +
+          `1. Open your wallet app (MetaMask, Trust Wallet, etc.)\n` +
+          `2. Look for "Add Token" or "Custom Token"\n` +
+          `3. Paste contract address: ${contractAddress}\n` +
+          `4. Token Symbol: LCUBE (should auto-fill)\n` +
+          `5. Decimals: 18 (should auto-fill)\n` +
+          `6. Confirm to add the token\n\n` +
+          `💡 The tokens are safely stored on BSC Testnet blockchain!`;
+
+        if (resetPoints) {
+          setTimeout(() => {
+            resetPoints();
+            alert(successMessage);
+            setMigrationStatus({ 
+              type: 'success', 
+              message: `🎉 ${tokensReceived} LCUBE tokens in your wallet! Add token contract to view in wallet app.`
+            });
+          }, 2000);
+        } else {
+          alert(successMessage);
+        }
+      } else {
+        throw new Error(result.error || 'Migration failed');
+      }
+
+    } catch (error) {
+      console.error('Migration failed:', error);
+      setMigrationStatus({ 
+        type: 'error', 
+        message: `❌ Migration failed: ${error.message}`
+      });
+    } finally {
+      setIsMigrating(false);
+    }
+  };
+
+  const handleAddDemoPoints = () => {
+    console.log('🎮 Adding demo points...');
+    console.log('📝 addPoints function available:', !!addPoints);
+    console.log('📊 Current points before adding:', points);
+    
+    if (addPoints) {
+      console.log('✅ Calling addPoints functions...');
+      addPoints('gamingHub', 'blockchainBasics', 150);
+      addPoints('gamingHub', 'smartContracts', 200);
+      addPoints('gamingHub', 'defiProtocols', 180);
+      addPoints('storyMode', 'chapter1', 250);
+      addPoints('storyMode', 'chapter2', 300);
+      addPoints('achievements', '', 100);
+      
+      console.log('🎉 Demo points added! Total should be 1180 points.');
+      
+      // Force refresh after a short delay to allow state updates
+      setTimeout(() => {
+        const savedPoints = localStorage.getItem('ccube_user_points');
+        console.log('💾 localStorage after adding points:', savedPoints);
+        setForceRefresh(prev => prev + 1);
+      }, 100);
+      
+      alert("Demo points added! Check console logs and the dashboard for updated values.");
+    } else {
+      console.error('❌ addPoints function not available');
+      alert("Error: addPoints function not available!");
+    }
   };
 
   return (
@@ -361,92 +531,288 @@ const MigratePointDashboard = ({ userProgress, walletData }) => {
       <DashboardHeader>
         <DashboardTitle>🔄 Migrate Points Dashboard</DashboardTitle>
         <DashboardSubtitle>
-          View all your earned points and migrate them to your C-Cube wallet
+          View all your earned points and migrate them to your C-Cube wallet as LCUBE tokens
         </DashboardSubtitle>
       </DashboardHeader>
+
+      {/* Debug Panel - Remove this after fixing */}
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{
+          background: 'rgba(255, 0, 0, 0.1)',
+          border: '1px solid rgba(255, 0, 0, 0.3)',
+          borderRadius: '8px',
+          padding: '12px',
+          margin: '12px 0',
+          fontSize: '12px',
+          color: '#ff6b6b'
+        }}>
+          <strong>🐛 Debug Info (Development Only):</strong><br/>
+          UserProgress exists: {debugInfo.userProgressExists ? '✅' : '❌'}<br/>
+          UserProgress.points exists: {debugInfo.userProgressPointsExists ? '✅' : '❌'}<br/>
+          LocalStorage has points: {debugInfo.localStoragePoints ? '✅' : '❌'}<br/>
+          Computed points total: {debugInfo.computedPointsTotal}<br/>
+          <strong>📊 Points Breakdown:</strong><br/>
+          • Gaming Hub Total: {points.gamingHub ? Object.values(points.gamingHub).reduce((sum, val) => sum + val, 0) : 'Error'}<br/>
+          • Story Mode Total: {points.storyMode ? Object.values(points.storyMode).reduce((sum, val) => sum + val, 0) : 'Error'}<br/>
+          • Achievements: {points.achievements || 0}<br/>
+          <strong>🎮 Gaming Hub Details:</strong><br/>
+          • Blockchain Basics: {points.gamingHub?.blockchainBasics || 0}<br/>
+          • Smart Contracts: {points.gamingHub?.smartContracts || 0}<br/>
+          • DeFi Protocols: {points.gamingHub?.defiProtocols || 0}<br/>
+          • NFTs Web3: {points.gamingHub?.nftsWeb3 || 0}<br/>
+          <strong>📖 Story Mode Details:</strong><br/>
+          • Chapter 1: {points.storyMode?.chapter1 || 0}<br/>
+          • Chapter 2: {points.storyMode?.chapter2 || 0}<br/>
+          • Chapter 3: {points.storyMode?.chapter3 || 0}<br/>
+          • Chapter 4: {points.storyMode?.chapter4 || 0}<br/>
+          Timestamp: {debugInfo.timestamp}
+        </div>
+      )}
+
+      {/* C-Cube Wallet Status */}
+      {walletData && (
+        <BlockchainStatusCard>
+          <StatusIndicator type={isConnecting ? 'info' : walletData ? 'success' : 'error'}>
+            {isConnecting ? '🔄' : walletData ? '✅' : '❌'}
+            {isConnecting ? 'Initializing Migration System...' : 
+             walletData ? 'C-Cube Wallet Ready for Migration' : 
+             'Wallet Connection Required'}
+          </StatusIndicator>
+          
+          {migrationStatus && (
+            <StatusMessage>
+              {migrationStatus.message}
+              {migrationStatus.txHash && (
+                <div style={{ marginTop: '8px', fontSize: '0.8rem' }}>
+                  Transaction: {migrationStatus.txHash}
+                </div>
+              )}
+            </StatusMessage>
+          )}
+
+          <BlockchainInfo>
+            <InfoItem>
+              <InfoLabel>Connected Wallet</InfoLabel>
+              <InfoValue>{walletData.address?.slice(0, 6)}...{walletData.address?.slice(-4)}</InfoValue>
+            </InfoItem>
+            <InfoItem>
+              <InfoLabel>LCUBE Balance</InfoLabel>
+              <InfoValue>{parseFloat(userTokenBalance).toFixed(6)} LCUBE</InfoValue>
+            </InfoItem>
+            <InfoItem>
+              <InfoLabel>Points → Tokens</InfoLabel>
+              <InfoValue>{points.total.toLocaleString()} → {(points.total / 1000).toFixed(6)}</InfoValue>
+            </InfoItem>
+            <InfoItem>
+              <InfoLabel>Network</InfoLabel>
+              <InfoValue>BSC Testnet</InfoValue>
+            </InfoItem>
+          </BlockchainInfo>
+        </BlockchainStatusCard>
+      )}
+
+      {/* Token Contract Information */}
+      <TokenInfoCard>
+        <TokenInfoTitle>
+          🪙 LCUBE Token Information
+        </TokenInfoTitle>
+        
+        <div style={{ marginBottom: '12px' }}>
+          <InfoLabel>Contract Address:</InfoLabel>
+          <ContractAddress>
+            {CONTRACT_ADDRESS}
+            <CopyButton 
+              onClick={() => {
+                navigator.clipboard.writeText(CONTRACT_ADDRESS);
+                alert('Contract address copied to clipboard!');
+              }}
+            >
+              Copy
+            </CopyButton>
+          </ContractAddress>
+        </div>
+
+        <BlockchainInfo>
+          <InfoItem>
+            <InfoLabel>Token Name</InfoLabel>
+            <InfoValue>LearnCube Token</InfoValue>
+          </InfoItem>
+          <InfoItem>
+            <InfoLabel>Symbol</InfoLabel>
+            <InfoValue>LCUBE</InfoValue>
+          </InfoItem>
+          <InfoItem>
+            <InfoLabel>Decimals</InfoLabel>
+            <InfoValue>18</InfoValue>
+          </InfoItem>
+          <InfoItem>
+            <InfoLabel>Network</InfoLabel>
+            <InfoValue>BSC Testnet (97)</InfoValue>
+          </InfoItem>
+        </BlockchainInfo>
+
+        <TokenInstructions>
+          <div style={{ color: '#ef4444', fontWeight: '700', marginBottom: '12px', fontSize: '1rem' }}>
+            🚨 IMPORTANT: Tokens won't show automatically in wallet apps!
+          </div>
+          <div style={{ color: '#3b82f6', fontWeight: '600', marginBottom: '12px' }}>
+            📱 You must manually add LCUBE token to see your balance:
+          </div>
+          <InstructionStep>
+            <StepNumber>1</StepNumber>
+            <span>Open your wallet app (MetaMask, Trust Wallet, etc.)</span>
+          </InstructionStep>
+          <InstructionStep>
+            <StepNumber>2</StepNumber>
+            <span>Go to "Add Token" or "Custom Token" section</span>
+          </InstructionStep>
+          <InstructionStep>
+            <StepNumber>3</StepNumber>
+            <span>Paste the contract address above</span>
+          </InstructionStep>
+          <InstructionStep>
+            <StepNumber>4</StepNumber>
+            <span>Token details should auto-fill (LCUBE, 18 decimals)</span>
+          </InstructionStep>
+          <InstructionStep>
+            <StepNumber>5</StepNumber>
+            <span>Confirm to add the token to your wallet</span>
+          </InstructionStep>
+          <div style={{ color: '#10b981', fontSize: '0.8rem', marginTop: '8px', fontStyle: 'italic' }}>
+            💡 Your tokens are already in your wallet on the blockchain - adding the token just makes them visible!
+          </div>
+        </TokenInstructions>
+      </TokenInfoCard>
 
       {/* Total Stats Overview */}
       <StatsGrid>
         <StatCard>
-          <StatValue>{totalPoints.toLocaleString()}</StatValue>
+          <StatValue>{points.total.toLocaleString()}</StatValue>
           <StatLabel>Total Points</StatLabel>
           <StatDescription>Ready for migration</StatDescription>
         </StatCard>
         <StatCard>
-          <StatValue>{gamePoints.toLocaleString()}</StatValue>
+          <StatValue>{points.gamingHub ? Object.values(points.gamingHub).reduce((sum, val) => sum + val, 0).toLocaleString() : '0'}</StatValue>
           <StatLabel>Gaming Hub Points</StatLabel>
           <StatDescription>From all game categories</StatDescription>
         </StatCard>
         <StatCard>
-          <StatValue>{storyPoints.toLocaleString()}</StatValue>
+          <StatValue>{points.storyMode ? Object.values(points.storyMode).reduce((sum, val) => sum + val, 0).toLocaleString() : '0'}</StatValue>
           <StatLabel>Story Mode Points</StatLabel>
           <StatDescription>From completed chapters</StatDescription>
         </StatCard>
         <StatCard>
-          <StatValue>{achievementPoints.toLocaleString()}</StatValue>
+          <StatValue>{points.achievements.toLocaleString()}</StatValue>
           <StatLabel>Achievement Points</StatLabel>
           <StatDescription>From special accomplishments</StatDescription>
         </StatCard>
       </StatsGrid>
 
-      {/* Gaming Hub Categories */}
-      <SectionContainer>
-        <SectionTitle>
-          <SectionIcon>🎮</SectionIcon>
-          Gaming Hub Categories
-        </SectionTitle>
-        <CategoryGrid>
-          {gamingCategories.map((category, index) => (
-            <CategoryCard key={index}>
-              <CategoryHeader>
-                <CategoryName>{category.name}</CategoryName>
-                <CategoryPoints>{category.points} pts</CategoryPoints>
-              </CategoryHeader>
-              <ItemsList>
-                {category.items.map((item, itemIndex) => (
-                  <ItemRow key={itemIndex}>
-                    <ItemName>{item.name}</ItemName>
-                    <ItemPoints>+{item.points}</ItemPoints>
-                  </ItemRow>
-                ))}
-              </ItemsList>
-            </CategoryCard>
-          ))}
-        </CategoryGrid>
-      </SectionContainer>
-
-      {/* Story Mode Chapters */}
-      <SectionContainer>
-        <SectionTitle>
-          <SectionIcon>📚</SectionIcon>
-          Story Mode Chapters
-        </SectionTitle>
-        <ChapterGrid>
-          {storyChapters.map((chapter, index) => (
-            <ChapterCard key={index}>
-              <ChapterHeader>
-                <ChapterName>{chapter.name}</ChapterName>
-                <ChapterStatus completed={chapter.completed}>
-                  {chapter.completed ? 'Completed' : 'Locked'}
-                </ChapterStatus>
-              </ChapterHeader>
-              <ChapterPoints>
-                {chapter.completed ? `+${chapter.points} pts` : `${chapter.points} pts available`}
-              </ChapterPoints>
-            </ChapterCard>
-          ))}
-        </ChapterGrid>
-      </SectionContainer>
-
-      {/* Migrate Button */}
+      {/* Demo and Migrate Buttons */}
       <MigrateButtonContainer>
+        {addPoints && points.total === 0 && (
+          <MigrateButton 
+            onClick={handleAddDemoPoints}
+            style={{ 
+              background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+              marginRight: '20px'
+            }}
+          >
+            🎮 Add Demo Points (for testing)
+          </MigrateButton>
+        )}
+        
+        {/* Refresh Points Button - Always visible for debugging */}
+        <MigrateButton 
+          onClick={() => {
+            console.log('🔄 Manual refresh triggered');
+            setForceRefresh(prev => prev + 1);
+          }}
+          style={{ 
+            background: 'linear-gradient(135deg, #10b981, #059669)',
+            marginRight: '20px'
+          }}
+        >
+          🔄 Refresh Points
+        </MigrateButton>
+
+        {/* Clear All Points Button - For debugging */}
+        <MigrateButton 
+          onClick={() => {
+            console.log('🗑️ Clearing all points and localStorage...');
+            
+            // Clear localStorage
+            localStorage.removeItem('ccube_user_points');
+            
+            // Reset points using the reset function
+            if (resetPoints) {
+              resetPoints();
+            }
+            
+            // Force page refresh to ensure clean state
+            setTimeout(() => {
+              window.location.reload();
+            }, 500);
+            
+            alert('All points cleared! Page will refresh in 0.5 seconds to ensure clean state.');
+          }}
+          style={{ 
+            background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+            marginRight: '20px'
+          }}
+        >
+          🗑️ Clear All Points & Refresh
+        </MigrateButton>
+        
+        {walletData && (
+          <>
+            <MigrateButton 
+              onClick={() => checkTokenBalance(walletData.address)}
+              style={{ 
+                background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                padding: '12px 24px',
+                fontSize: '1rem'
+              }}
+            >
+              🔄 Refresh Token Balance
+            </MigrateButton>
+            
+            <MigrateButton 
+              onClick={() => {
+                const instructions = `🪙 Add LCUBE Token to Your Wallet\n\n` +
+                  `📱 Copy this contract address:\n` +
+                  `${CONTRACT_ADDRESS}\n\n` +
+                  `🔧 Steps:\n` +
+                  `1. Open your wallet app\n` +
+                  `2. Find "Add Token" or "Custom Token"\n` +
+                  `3. Paste the contract address above\n` +
+                  `4. Symbol: LCUBE (auto-fills)\n` +
+                  `5. Decimals: 18 (auto-fills)\n` +
+                  `6. Confirm to add token\n\n` +
+                  `✅ Your tokens will then be visible!`;
+                
+                navigator.clipboard.writeText(CONTRACT_ADDRESS);
+                alert(instructions);
+              }}
+              style={{ 
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                padding: '12px 24px',
+                fontSize: '1rem'
+              }}
+            >
+              📋 How to Add LCUBE Token
+            </MigrateButton>
+          </>
+        )}
+        
         <MigrateButton 
           onClick={handleMigrate}
-          disabled={!walletData || totalPoints === 0}
+          disabled={!walletData || points.total === 0 || isMigrating}
         >
-          {!walletData ? '🔒 Connect Wallet to Migrate' : 
-           totalPoints === 0 ? '🎯 No Points to Migrate' :
-           `🚀 Migrate ${totalPoints.toLocaleString()} Points`}
+          {!walletData ? '🔒 Connect C-Cube Wallet First' : 
+           isMigrating ? '🔄 Migrating to Your Wallet...' :
+           points.total === 0 ? '🎯 No Points to Migrate' :
+           'Migrate ' + points.total.toLocaleString() + ' Points to C-Cube Wallet'}
         </MigrateButton>
       </MigrateButtonContainer>
     </MigrateContainer>

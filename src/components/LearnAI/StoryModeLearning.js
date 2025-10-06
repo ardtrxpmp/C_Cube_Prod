@@ -382,7 +382,7 @@ const NavButton = styled.button`
   }
 `;
 
-const StoryModeLearning = ({ userProgress, setUserProgress }) => {
+const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
   const [currentChapter, setCurrentChapter] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedChoice, setSelectedChoice] = useState(null);
@@ -1538,6 +1538,14 @@ const StoryModeLearning = ({ userProgress, setUserProgress }) => {
     // Award 1 point for each question attempt (correct or incorrect)
     const newTotalPoints = totalPoints + 1;
     setTotalPoints(newTotalPoints);
+
+    // Award points to the global system (only for correct answers)
+    if (addPoints && isCorrect) {
+      const questionPoints = 5; // Points for correct answers
+      const chapterKey = `chapter${currentChapter + 1}`; // chapter1, chapter2, etc.
+      addPoints('storyMode', chapterKey, questionPoints);
+      console.log(`✅ Correct answer in Chapter ${currentChapter + 1}! Awarded ${questionPoints} points.`);
+    }
     
     // Check for milestones and show appropriate animation
     let animation = isCorrect ? '+1 Point! ✅' : '+1 Point! 📚';
@@ -1569,10 +1577,26 @@ const StoryModeLearning = ({ userProgress, setUserProgress }) => {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedChoice(null);
     } else if (currentChapter < storyChapters.length - 1) {
+      // Chapter completed! Award points before moving to next chapter
+      if (addPoints) {
+        const chapterPoints = 50; // Points for completing a chapter
+        const chapterKey = `chapter${currentChapter + 1}`; // chapter1, chapter2, etc.
+        addPoints('storyMode', chapterKey, chapterPoints);
+        console.log(`📖 Chapter ${currentChapter + 1} completed! Awarded ${chapterPoints} points.`);
+      }
+
       // Next chapter
       setCurrentChapter(currentChapter + 1);
       setCurrentQuestion(0);
       setSelectedChoice(null);
+    } else {
+      // Final chapter completed!
+      if (addPoints) {
+        const finalChapterPoints = 75; // Extra points for final chapter
+        const finalChapterKey = `chapter${currentChapter + 1}`;
+        addPoints('storyMode', finalChapterKey, finalChapterPoints);
+        console.log(`🏆 Final chapter (${currentChapter + 1}) completed! Awarded ${finalChapterPoints} points.`);
+      }
     }
   };
 
