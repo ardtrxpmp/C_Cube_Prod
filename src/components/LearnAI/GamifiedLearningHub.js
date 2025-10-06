@@ -628,6 +628,54 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
   const [celebrationData, setCelebrationData] = useState(null);
   const [floatingEmojis, setFloatingEmojis] = useState([]);
 
+  // Load game progress on component mount
+  useEffect(() => {
+    const savedGameProgress = sessionStorage.getItem('ccube_game_progress');
+    if (savedGameProgress) {
+      try {
+        const gameData = JSON.parse(savedGameProgress);
+        console.log('🎮 Loading saved game progress:', gameData);
+        
+        if (gameData.activeQuest) setActiveQuest(gameData.activeQuest);
+        if (gameData.currentChallengeIndex !== undefined) setCurrentChallengeIndex(gameData.currentChallengeIndex);
+        if (gameData.playerXP !== undefined) setPlayerXP(gameData.playerXP);
+        if (gameData.playerLevel !== undefined) setPlayerLevel(gameData.playerLevel);
+        if (gameData.dropZoneContents) setDropZoneContents(gameData.dropZoneContents);
+        if (gameData.correctAnswers !== undefined) setCorrectAnswers(gameData.correctAnswers);
+        if (gameData.totalQuestions !== undefined) setTotalQuestions(gameData.totalQuestions);
+        if (gameData.usedItems) setUsedItems(gameData.usedItems);
+        if (gameData.selectionsMade !== undefined) setSelectionsMade(gameData.selectionsMade);
+        if (gameData.challengeComplete !== undefined) setChallengeComplete(gameData.challengeComplete);
+      } catch (err) {
+        console.error('Error loading game progress:', err);
+        sessionStorage.removeItem('ccube_game_progress');
+      }
+    }
+  }, []);
+
+  // Save game progress whenever key states change
+  useEffect(() => {
+    if (activeQuest) {
+      const gameData = {
+        activeQuest,
+        currentChallengeIndex,
+        playerXP,
+        playerLevel,
+        dropZoneContents,
+        correctAnswers,
+        totalQuestions,
+        usedItems,
+        selectionsMade,
+        challengeComplete,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log('💾 Saving game progress:', gameData);
+      sessionStorage.setItem('ccube_game_progress', JSON.stringify(gameData));
+    }
+  }, [activeQuest, currentChallengeIndex, playerXP, playerLevel, dropZoneContents, 
+      correctAnswers, totalQuestions, usedItems, selectionsMade, challengeComplete]);
+
   const quests = [
     {
       id: 'blockchain-basics',
@@ -933,31 +981,55 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
       return;
     }
 
+    console.log('🎯 Quest clicked:', quest.title);
+    
+    // Check if we have saved progress for this quest
+    const savedGameProgress = sessionStorage.getItem('ccube_game_progress');
+    let shouldResetToStart = true;
+    
+    if (savedGameProgress) {
+      try {
+        const gameData = JSON.parse(savedGameProgress);
+        // If we have saved progress for this exact quest, don't reset
+        if (gameData.activeQuest && gameData.activeQuest.id === quest.id) {
+          console.log('📥 Resuming saved progress for quest:', quest.title);
+          shouldResetToStart = false;
+        }
+      } catch (err) {
+        console.error('Error checking saved progress:', err);
+      }
+    }
+
     setActiveQuest(quest);
     
-    // Reset challenge to start from beginning of new quest
-    setCurrentChallengeIndex(0);
-    setDropZoneContents({});
-    setSelectionsMade(0);
-    setChallengeComplete(false);
-    setUsedItems([]);
-    setCorrectAnswers(0);
-    setTotalQuestions(0);
-    
-    // Force reset XP to ensure no carryover from previous sessions
-    setPlayerXP(0);
-    setPlayerLevel(1);
-    
-    // Only award XP and mark as started if this quest hasn't been started before
-    const questStartedKey = `quest-started-${quest.id}`;
-    const hasBeenStarted = userProgress.completedNodes.includes(questStartedKey);
-    
-    if (!quest.completed && !hasBeenStarted) {
-      // Mark quest as started (no XP reward for just starting)
-      setUserProgress(prev => ({
-        ...prev,
-        completedNodes: [...prev.completedNodes, questStartedKey]
-      }));
+    if (shouldResetToStart) {
+      console.log('🔄 Starting fresh quest:', quest.title);
+      // Reset challenge to start from beginning of new quest
+      setCurrentChallengeIndex(0);
+      setDropZoneContents({});
+      setSelectionsMade(0);
+      setChallengeComplete(false);
+      setUsedItems([]);
+      setCorrectAnswers(0);
+      setTotalQuestions(0);
+      
+      // Force reset XP to ensure no carryover from previous sessions
+      setPlayerXP(0);
+      setPlayerLevel(1);
+      
+      // Only award XP and mark as started if this quest hasn't been started before
+      const questStartedKey = `quest-started-${quest.id}`;
+      const hasBeenStarted = userProgress.completedNodes.includes(questStartedKey);
+      
+      if (!quest.completed && !hasBeenStarted) {
+        // Mark quest as started (no XP reward for just starting)
+        setUserProgress(prev => ({
+          ...prev,
+          completedNodes: [...prev.completedNodes, questStartedKey]
+        }));
+      }
+    } else {
+      console.log('✅ Continuing saved quest progress');
     }
   };
 
@@ -1130,6 +1202,8 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
   };
 
   const handleRestartGame = () => {
+    console.log('🔄 Restarting game - clearing all progress');
+    
     setCurrentChallengeIndex(0);
     setDropZoneContents({});
     setPlayerXP(0);
@@ -1143,6 +1217,11 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
     setShowCelebration(false);
     setCelebrationData(null);
     setFloatingEmojis([]);
+    setActiveQuest(null);
+    
+    // Clear saved game progress
+    sessionStorage.removeItem('ccube_game_progress');
+    
     // Reset all progress - clear completed nodes to reset progress bars
     setUserProgress({
       completedNodes: []

@@ -392,6 +392,41 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
   const [animationText, setAnimationText] = useState('');
   const [showDashboard, setShowDashboard] = useState(true);
 
+  // Load story progress on component mount
+  useEffect(() => {
+    const savedStoryProgress = sessionStorage.getItem('ccube_story_progress');
+    if (savedStoryProgress) {
+      try {
+        const storyData = JSON.parse(savedStoryProgress);
+        console.log('📖 Loading saved story progress:', storyData);
+        
+        if (storyData.currentChapter !== undefined) setCurrentChapter(storyData.currentChapter);
+        if (storyData.currentQuestion !== undefined) setCurrentQuestion(storyData.currentQuestion);
+        if (storyData.chapterScores) setChapterScores(storyData.chapterScores);
+        if (storyData.totalPoints !== undefined) setTotalPoints(storyData.totalPoints);
+        if (storyData.selectedChoice !== undefined) setSelectedChoice(storyData.selectedChoice);
+      } catch (err) {
+        console.error('Error loading story progress:', err);
+        sessionStorage.removeItem('ccube_story_progress');
+      }
+    }
+  }, []);
+
+  // Save story progress whenever key states change
+  useEffect(() => {
+    const storyData = {
+      currentChapter,
+      currentQuestion,
+      chapterScores,
+      totalPoints,
+      selectedChoice,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log('💾 Saving story progress:', storyData);
+    sessionStorage.setItem('ccube_story_progress', JSON.stringify(storyData));
+  }, [currentChapter, currentQuestion, chapterScores, totalPoints, selectedChoice]);
+
   const storyChapters = [
     {
       title: "🏗️ Blockchain Fundamentals",
@@ -1839,11 +1874,15 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
             {totalPoints > 0 && (
               <button
                 onClick={() => {
+                  console.log('🔄 Resetting story progress');
                   setTotalPoints(0);
                   setChapterScores({});
                   setCurrentChapter(0);
                   setCurrentQuestion(0);
                   setSelectedChoice(null);
+                  
+                  // Clear saved story progress
+                  sessionStorage.removeItem('ccube_story_progress');
                 }}
                 style={{
                   width: '100%',

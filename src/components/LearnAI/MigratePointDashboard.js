@@ -284,9 +284,9 @@ const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoint
     console.log('📊 userProgress received:', userProgress);
     console.log('📊 userProgress.points:', userProgress?.points);
     
-    // Check localStorage directly as backup
-    const savedPoints = localStorage.getItem('ccube_user_points');
-    console.log('💾 localStorage points:', savedPoints);
+    // Check sessionStorage directly as backup
+    const savedPoints = sessionStorage.getItem('ccube_user_points');
+    console.log('💾 sessionStorage points:', savedPoints);
     
     let finalPoints;
     
@@ -298,7 +298,7 @@ const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoint
       // Fallback to localStorage if userProgress.points is missing
       try {
         finalPoints = JSON.parse(savedPoints);
-        console.log('⚠️ Fallback to localStorage points');
+        console.log('⚠️ Fallback to sessionStorage points');
       } catch (e) {
         console.error('❌ Error parsing localStorage points:', e);
         finalPoints = null;
@@ -325,7 +325,7 @@ const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoint
     const info = {
       userProgressExists: !!userProgress,
       userProgressPointsExists: !!(userProgress?.points),
-      localStoragePoints: localStorage.getItem('ccube_user_points'),
+      sessionStoragePoints: sessionStorage.getItem('ccube_user_points'),
       computedPointsTotal: points.total,
       timestamp: new Date().toISOString()
     };
@@ -514,8 +514,8 @@ const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoint
       
       // Force refresh after a short delay to allow state updates
       setTimeout(() => {
-        const savedPoints = localStorage.getItem('ccube_user_points');
-        console.log('💾 localStorage after adding points:', savedPoints);
+        const savedPoints = sessionStorage.getItem('ccube_user_points');
+        console.log('💾 sessionStorage after adding points:', savedPoints);
         setForceRefresh(prev => prev + 1);
       }, 100);
       
@@ -549,7 +549,7 @@ const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoint
           <strong>🐛 Debug Info (Development Only):</strong><br/>
           UserProgress exists: {debugInfo.userProgressExists ? '✅' : '❌'}<br/>
           UserProgress.points exists: {debugInfo.userProgressPointsExists ? '✅' : '❌'}<br/>
-          LocalStorage has points: {debugInfo.localStoragePoints ? '✅' : '❌'}<br/>
+          SessionStorage has points: {debugInfo.sessionStoragePoints ? '✅' : '❌'}<br/>
           Computed points total: {debugInfo.computedPointsTotal}<br/>
           <strong>📊 Points Breakdown:</strong><br/>
           • Gaming Hub Total: {points.gamingHub ? Object.values(points.gamingHub).reduce((sum, val) => sum + val, 0) : 'Error'}<br/>
@@ -741,8 +741,10 @@ const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoint
           onClick={() => {
             console.log('🗑️ Clearing all points and localStorage...');
             
-            // Clear localStorage
-            localStorage.removeItem('ccube_user_points');
+            // Clear sessionStorage and all progress
+            sessionStorage.removeItem('ccube_user_points');
+            sessionStorage.removeItem('ccube_game_progress');
+            sessionStorage.removeItem('ccube_story_progress');
             
             // Reset points using the reset function
             if (resetPoints) {

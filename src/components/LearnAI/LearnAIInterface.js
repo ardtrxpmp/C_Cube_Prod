@@ -443,15 +443,17 @@ const SelectorButton = styled.button`
         total: newProgress.points.total
       });
       
-      // Save to localStorage (persists across browser sessions)
-      console.log('Saving points to localStorage:', newProgress.points); // Debug log
-      localStorage.setItem('ccube_user_points', JSON.stringify(newProgress.points));
+      // Save to sessionStorage (persists until browser closes)
+      console.log('Saving points to sessionStorage:', newProgress.points); // Debug log
+      sessionStorage.setItem('ccube_user_points', JSON.stringify(newProgress.points));
       
       return newProgress;
     });
   };
 
   const resetPoints = () => {
+    console.log('🗑️ Resetting all points and progress after migration');
+    
     setUserProgress(prev => ({
       ...prev,
       points: {
@@ -475,7 +477,13 @@ const SelectorButton = styled.button`
         achievements: 0
       }
     }));
-    localStorage.removeItem('ccube_user_points');
+    
+    // Clear all progress data from sessionStorage
+    sessionStorage.removeItem('ccube_user_points');
+    sessionStorage.removeItem('ccube_game_progress');
+    sessionStorage.removeItem('ccube_story_progress');
+    
+    console.log('✅ All points and progress cleared');
   };
 
   // Check for existing wallet and points on component mount
@@ -499,10 +507,10 @@ const SelectorButton = styled.button`
       }
     }
 
-    // Load points from localStorage
-    console.log('LearnAIInterface mounting - checking localStorage for points...');
-    const savedPoints = localStorage.getItem('ccube_user_points');
-    console.log('Raw saved points from localStorage:', savedPoints);
+    // Load points from sessionStorage
+    console.log('LearnAIInterface mounting - checking sessionStorage for points...');
+    const savedPoints = sessionStorage.getItem('ccube_user_points');
+    console.log('Raw saved points from sessionStorage:', savedPoints);
     
     if (savedPoints) {
       try {
@@ -535,10 +543,10 @@ const SelectorButton = styled.button`
         });
       } catch (err) {
         console.error('Error loading saved points:', err);
-        localStorage.removeItem('ccube_user_points');
+        sessionStorage.removeItem('ccube_user_points');
       }
     } else {
-      console.log('No saved points found in localStorage');
+      console.log('No saved points found in sessionStorage');
     }
   }, []);
 
