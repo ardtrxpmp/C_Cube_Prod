@@ -278,34 +278,35 @@ const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoint
   const [userTokenBalance, setUserTokenBalance] = useState('0');
   const [forceRefresh, setForceRefresh] = useState(0);
   
-  // Real-time data from user progress with more robust fallback
+  // Real-time data from user progress with immediate sessionStorage priority
   const points = useMemo(() => {
-    console.log('🔍 MigratePointDashboard - Computing points...');
-    console.log('📊 userProgress received:', userProgress);
-    console.log('📊 userProgress.points:', userProgress?.points);
+    console.log('🔍 MigratePointDashboard - Computing points... (refresh:', forceRefresh, ')');
     
-    // Check sessionStorage directly as backup
+    // ALWAYS check sessionStorage first for most up-to-date data
     const savedPoints = sessionStorage.getItem('ccube_user_points');
-    console.log('💾 sessionStorage points:', savedPoints);
+    console.log('💾 sessionStorage points (latest):', savedPoints);
+    console.log('📊 userProgress.points (backup):', userProgress?.points);
     
     let finalPoints;
     
-    if (userProgress?.points) {
-      // Use userProgress points if available
-      finalPoints = userProgress.points;
-      console.log('✅ Using userProgress.points');
-    } else if (savedPoints) {
-      // Fallback to localStorage if userProgress.points is missing
+    // Priority 1: Use sessionStorage (most up-to-date from Gaming Hub/Story Mode)
+    if (savedPoints) {
       try {
         finalPoints = JSON.parse(savedPoints);
-        console.log('⚠️ Fallback to sessionStorage points');
+        console.log('✅ Using fresh sessionStorage points');
       } catch (e) {
-        console.error('❌ Error parsing localStorage points:', e);
+        console.error('❌ Error parsing sessionStorage points:', e);
         finalPoints = null;
       }
     }
     
-    // Final fallback to default structure
+    // Priority 2: Fallback to userProgress if sessionStorage fails
+    if (!finalPoints && userProgress?.points) {
+      finalPoints = userProgress.points;
+      console.log('⚠️ Fallback to userProgress.points');
+    }
+    
+    // Priority 3: Final fallback to default structure
     if (!finalPoints) {
       finalPoints = {
         total: 0,
@@ -316,9 +317,44 @@ const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoint
       console.log('🔄 Using default fallback points');
     }
     
-    console.log('🎯 Final computed points:', finalPoints);
+    // Ensure proper totals calculation
+    if (finalPoints.gamingHub && finalPoints.storyMode) {
+      const gamingTotal = Object.values(finalPoints.gamingHub).reduce((sum, val) => sum + val, 0);
+      const storyTotal = Object.values(finalPoints.storyMode).reduce((sum, val) => sum + val, 0);
+      finalPoints.total = gamingTotal + storyTotal + (finalPoints.achievements || 0);
+      
+      console.log('🎯 Final computed points:', {
+        gaming: gamingTotal,
+        story: storyTotal, 
+        achievements: finalPoints.achievements || 0,
+        total: finalPoints.total
+      });
+    }
+    
     return finalPoints;
   }, [userProgress, forceRefresh]);
+
+  // Auto-refresh points when component is viewed
+  useEffect(() => {
+    const refreshPoints = () => {
+      console.log('🔄 MigratePointDashboard - Auto-refreshing points...');
+      setForceRefresh(prev => prev + 1);
+    };
+
+    // Refresh immediately when component mounts
+    refreshPoints();
+
+    // Refresh when window gains focus (user switches back from another tab/app)
+    window.addEventListener('focus', refreshPoints);
+    
+    // Refresh when user clicks on this tab/section  
+    const interval = setInterval(refreshPoints, 2000); // Every 2 seconds for real-time sync
+
+    return () => {
+      window.removeEventListener('focus', refreshPoints);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Debug logging
   useEffect(() => {
@@ -683,6 +719,28 @@ const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoint
           </div>
         </TokenInstructions>
       </TokenInfoCard>
+
+      {/* Refresh Button */}
+      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+        <button
+          onClick={() => {
+            console.log('🔄 Manual refresh triggered');
+            setForceRefresh(prev => prev + 1);
+          }}
+          style={{
+            background: 'linear-gradient(135deg, #10b981, #059669)',
+            color: 'white',
+            border: 'none',
+            padding: '8px 16px',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontWeight: '500'
+          }}
+        >
+          🔄 Refresh Points
+        </button>
+      </div>
 
       {/* Total Stats Overview */}
       <StatsGrid>
