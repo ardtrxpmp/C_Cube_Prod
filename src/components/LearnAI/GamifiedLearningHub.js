@@ -1103,7 +1103,7 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
             } else {
               console.log(`⚠️ Challenge ${currentChallengeIndex + 1} already completed - no additional points awarded.`);
             }
-            console.log(`✅ Challenge ${currentChallengeIndex + 1} of "${activeQuest.title}" completed! Awarded ${challengePoints} points.`);
+            console.log(`✅ Challenge ${currentChallengeIndex + 1} of "${activeQuest.title}" completed!`);
           }
         }
       }
