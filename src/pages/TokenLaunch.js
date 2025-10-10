@@ -108,7 +108,7 @@ const CCubeWalletButton = styled.button`
   white-space: nowrap;
   height: 32px;
   position: absolute;
-  right: 20px;
+  right: 40px;
   z-index: 10;
   
   &:hover {
@@ -680,9 +680,9 @@ const TokenRowsContent = styled.div`
 
 const TableHeader = styled.div`
   display: grid;
-  grid-template-columns: 60px 1fr 2fr 80px;
-  gap: 0.5rem;
-  padding: 0.75rem;
+  grid-template-columns: 60px 1.3fr 1.7fr 80px;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
   background: rgba(0, 204, 51, 0.1);
   border-radius: 8px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -694,8 +694,8 @@ const TableHeader = styled.div`
 
 const TokenRow = styled.div`
   display: grid;
-  grid-template-columns: 60px 1fr 2fr 80px;
-  gap: 0.5rem;
+  grid-template-columns: 60px 1.3fr 1.7fr 80px;
+  gap: 0.75rem;
   padding: 0.5rem 0.75rem;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -864,7 +864,6 @@ const DescriptionCell = styled.div`
   color: white;
   font-size: 0.75rem;
   line-height: 1.2;
-  padding: 0 0.25rem;
 `;
 
 const DaysCell = styled.div`
@@ -883,7 +882,10 @@ const TokenLaunch = ({ onNavigate }) => {
     tokenSymbol: '',
     initialSupply: '',
     walletAddress: '',
-    tokenImage: null
+    tokenImage: null,
+    twitter: '',
+    website: '',
+    telegram: ''
   });
   
   const [imagePreview, setImagePreview] = useState('');
@@ -903,7 +905,7 @@ const TokenLaunch = ({ onNavigate }) => {
       symbol: 'DOGE',
       contractAddress: '0x1234...abcd',
       daysCreated: 45,
-      socials: ['T', 'W', 'D'],
+      socials: ['T', 'W', 'D', 'TG'],
       image: 'https://assets.coingecko.com/coins/images/5/standard/dogecoin.png',
       bgColor: '#F7931A',
       description: 'The original meme coin that started as a joke. Beloved by communities worldwide for its fun and charitable spirit.'
@@ -913,7 +915,7 @@ const TokenLaunch = ({ onNavigate }) => {
       symbol: 'PEPE',
       contractAddress: '0x5678...efgh',
       daysCreated: 23,
-      socials: ['T', 'W'],
+      socials: ['T', 'W', 'TG'],
       image: 'https://assets.coingecko.com/coins/images/29850/standard/pepe-token.jpeg',
       bgColor: '#0F8A5F',
       description: 'Internet culture meets crypto with this frog-themed token. A tribute to the iconic meme character loved globally.'
@@ -1055,7 +1057,8 @@ const TokenLaunch = ({ onNavigate }) => {
       'T': { color: '#1DA1F2', symbol: '𝕏' }, // Twitter/X
       'W': { color: '#00cc33', symbol: '🌐' }, // Website
       'D': { color: '#5865F2', symbol: '🎮' }, // Discord (gaming controller)
-      'G': { color: '#24292e', symbol: '</>' }  // GitHub (code brackets)
+      'G': { color: '#24292e', symbol: '</>' }, // GitHub (code brackets)
+      'TG': { color: '#29B6F6', symbol: '▶' } // Telegram (arrow pointing right like paper plane)
     };
     
     const social = socialData[type] || { color: '#4e9a06', symbol: '?' };
@@ -1071,7 +1074,8 @@ const TokenLaunch = ({ onNavigate }) => {
       'T': 'Twitter',
       'W': 'Website', 
       'D': 'Discord',
-      'G': 'GitHub'
+      'G': 'GitHub',
+      'TG': 'Telegram'
     };
     return names[type] || 'Social';
   };
@@ -1231,7 +1235,16 @@ const TokenLaunch = ({ onNavigate }) => {
             </Link>
           </SimpleLogo>
           <CCubeWalletButton connected={walletConnected} onClick={handleWalletClick}>
-            {walletConnected ? '🗑️ Disconnect Wallet' : '💳 Connect Wallet'}
+            {walletConnected ? (
+              <span style={{ fontWeight: 'bold' }}>
+                🗑️ Disconnect{' '}
+                {walletData && walletData.address && (
+                  <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>
+                    ({walletData.address.slice(0, 4)}...{walletData.address.slice(-3)})
+                  </span>
+                )}
+              </span>
+            ) : <span style={{ fontWeight: 'bold' }}>💳 Connect C-Cube Wallet</span>}
           </CCubeWalletButton>
         </SimpleHeaderContent>
       </SimpleHeader>
@@ -1241,8 +1254,7 @@ const TokenLaunch = ({ onNavigate }) => {
         <FormHeader>
           <FormTitle>Launch Your Token</FormTitle>
           <FormSubtitle>
-            Create and deploy your custom token on BSC Testnet in minutes. 
-            Fill in your token details below and launch to the blockchain.
+            Create and deploy your  BSC token in minutes. Fill in your token details below and launch to the blockchain.
           </FormSubtitle>
         </FormHeader>
 
@@ -1308,6 +1320,47 @@ const TokenLaunch = ({ onNavigate }) => {
                 onChange={handleInputChange}
                 placeholder="e.g., 1000000"
                 required
+              />
+            </FormGroup>
+          </FormRow>
+        </FormSection>
+
+        <FormSection>
+          <SectionTitle>🌐 Social Media Links</SectionTitle>
+          
+          <FormRow columns="1fr 1fr">
+            <FormGroup>
+              <Label>Twitter</Label>
+              <Input
+                type="url"
+                name="twitter"
+                value={formData.twitter}
+                onChange={handleInputChange}
+                placeholder="https://twitter.com/yourhandle"
+              />
+            </FormGroup>
+            
+            <FormGroup>
+              <Label>Website</Label>
+              <Input
+                type="url"
+                name="website"
+                value={formData.website}
+                onChange={handleInputChange}
+                placeholder="https://yourwebsite.com"
+              />
+            </FormGroup>
+          </FormRow>
+
+          <FormRow>
+            <FormGroup>
+              <Label>Telegram</Label>
+              <Input
+                type="url"
+                name="telegram"
+                value={formData.telegram}
+                onChange={handleInputChange}
+                placeholder="https://t.me/yourchannel"
               />
             </FormGroup>
           </FormRow>
@@ -1415,12 +1468,14 @@ const TokenLaunch = ({ onNavigate }) => {
         <ListTitle>🏆 Launched Tokens</ListTitle>
         
         <TokenTable>
-          <TableHeader>
-            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Rank</div>
-            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start'}}>Token Info</div>
-            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start'}}>Description</div>
-            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Days</div>
-          </TableHeader>
+          <div style={{padding: '0 1.5rem'}}>
+            <TableHeader>
+              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Rank</div>
+              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start'}}>Token Info</div>
+              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start'}}>Description</div>
+              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Days</div>
+            </TableHeader>
+          </div>
           
           <TokenRowsSubContainer>
             <TokenRowsContent>

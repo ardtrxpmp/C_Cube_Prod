@@ -268,6 +268,7 @@ const LaunchAppButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  text-decoration: none;
 
   &:hover {
     transform: translateY(-1px);
