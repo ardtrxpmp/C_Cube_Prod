@@ -1,0 +1,13 @@
+{
+  "contractAddress": "0xC10DDd932a733799A5b96E21b993EFD2B4E003Cc",
+  "transactionHash": "0x379d89719977bb0b6423510b666385dd3f1bba426909a1800e318ca54ec3d40b",
+  "tokenName": "qwew",
+  "tokenSymbol": "qwew",
+  "decimals": 18,
+  "initialSupply": "10000",
+  "ownerAddress": "0x388211c545b25B69cf03bBc1EE897076ca2f944D",
+  "network": "BSC Testnet",
+  "chainId": 97,
+  "deployedAt": "2025-10-10T02:46:09.511Z",
+  "explorerUrl": "https://testnet.bscscan.com/address/0xC10DDd932a733799A5b96E21b993EFD2B4E003Cc"
+}

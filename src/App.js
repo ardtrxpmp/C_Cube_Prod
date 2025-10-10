@@ -18,6 +18,8 @@ import Landing from './pages/Landing_New';
 import Content from './pages/Content';
 import Learn from './pages/Learn';
 import AITutor from './pages/AITutor';
+import Playground from './pages/Playground';
+import TokenLaunch from './pages/TokenLaunch';
 import AboutUs from './pages/AboutUs';
 import Community from './pages/Community';
 import FAQ from './pages/FAQ_Fixed';
@@ -39,6 +41,9 @@ function AppContent() {
       'learn': '/learn',
       'content': '/learn',
       'ai-tutor': '/ai-tutor',
+      'earn': '/ai-tutor',
+      'playground': '/playground',
+      'launch-token': '/launch-token',
       'faq': '/faq',
       'downloads': '/downloads',
       'apps': '/apps',
@@ -195,11 +200,14 @@ function App() {
       'learn': '/learn',
       'content': '/learn',
       'ai-tutor': '/ai-tutor',
+      'earn': '/ai-tutor',
+      'playground': '/playground',
       'faq': '/faq',
       'downloads': '/downloads',
       'apps': '/apps',
       'c-cube': '/apps',
-      'coming-soon': '/coming-soon'
+      'coming-soon': '/coming-soon',
+      'launch-token': '/launch-token'
     };
 
     const route = routeMap[page] || '/';
@@ -288,6 +296,12 @@ function App() {
           } />
           <Route path="/ai-tutor" element={
             <AITutor onNavigate={handlePageNavigation} />
+          } />
+          <Route path="/playground" element={
+            <Playground onNavigate={handlePageNavigation} />
+          } />
+          <Route path="/launch-token" element={
+            <TokenLaunch onNavigate={handlePageNavigation} />
           } />
           <Route path="/about" element={
             <>

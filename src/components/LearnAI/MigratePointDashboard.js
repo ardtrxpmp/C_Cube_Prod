@@ -267,7 +267,67 @@ const MigrateButton = styled.button`
   }
 `;
 
-const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoints }) => {
+// Calculate Gaming Hub points using the same method as Gaming Hub component
+const calculateGamingHubPoints = () => {
+  try {
+    const savedPoints = sessionStorage.getItem('ccube_user_points');
+    if (!savedPoints) return 0;
+    
+    const pointsData = JSON.parse(savedPoints);
+    if (!pointsData.gamingHub) return 0;
+    
+    return Object.values(pointsData.gamingHub).reduce((sum, val) => sum + val, 0);
+  } catch (error) {
+    console.error('Error calculating Gaming Hub points:', error);
+    return 0;
+  }
+};
+
+// Calculate Story Mode points using the same method as Story Mode component
+const calculateStoryModePoints = () => {
+  try {
+    const savedPoints = sessionStorage.getItem('ccube_user_points');
+    if (!savedPoints) return 0;
+    
+    const pointsData = JSON.parse(savedPoints);
+    if (!pointsData.storyMode) return 0;
+    
+    return Object.values(pointsData.storyMode).reduce((sum, val) => sum + val, 0);
+  } catch (error) {
+    console.error('Error calculating Story Mode points:', error);
+    return 0;
+  }
+};
+
+// Get individual Gaming Hub category points
+const getGamingHubCategoryPoints = () => {
+  try {
+    const savedPoints = sessionStorage.getItem('ccube_user_points');
+    if (!savedPoints) return {};
+    
+    const pointsData = JSON.parse(savedPoints);
+    return pointsData.gamingHub || {};
+  } catch (error) {
+    console.error('Error getting Gaming Hub category points:', error);
+    return {};
+  }
+};
+
+// Get individual Story Mode chapter points
+const getStoryModeChapterPoints = () => {
+  try {
+    const savedPoints = sessionStorage.getItem('ccube_user_points');
+    if (!savedPoints) return {};
+    
+    const pointsData = JSON.parse(savedPoints);
+    return pointsData.storyMode || {};
+  } catch (error) {
+    console.error('Error getting Story Mode chapter points:', error);
+    return {};
+  }
+};
+
+const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, addPoints, resetPoints }) => {
   // Enhanced debugging and fallback system
   const [debugInfo, setDebugInfo] = useState({});
   
@@ -334,24 +394,88 @@ const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoint
     return finalPoints;
   }, [userProgress, forceRefresh]);
 
+  // Enhanced refresh points function with loading state
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  const refreshPointsFromSource = async () => {
+    setIsRefreshing(true);
+    console.log('🔄 MigratePointDashboard - Comprehensive points refresh...');
+    
+    try {
+      // Step 1: Force re-read from sessionStorage (latest from Gaming Hub/Story Mode)
+      const freshSessionData = sessionStorage.getItem('ccube_user_points');
+      console.log('📊 Current sessionStorage data:', freshSessionData);
+      
+      if (freshSessionData) {
+        const freshPoints = JSON.parse(freshSessionData);
+        console.log('📊 Parsed fresh points:', freshPoints);
+        
+        // Recalculate totals to ensure accuracy
+        const gamingTotal = freshPoints.gamingHub ? Object.values(freshPoints.gamingHub).reduce((sum, val) => sum + val, 0) : 0;
+        const storyTotal = freshPoints.storyMode ? Object.values(freshPoints.storyMode).reduce((sum, val) => sum + val, 0) : 0;
+        const achievementsTotal = freshPoints.achievements || 0;
+        
+        const recalculatedPoints = {
+          ...freshPoints,
+          total: gamingTotal + storyTotal + achievementsTotal
+        };
+        
+        console.log('🧮 Recalculated totals:', {
+          gaming: gamingTotal,
+          story: storyTotal,
+          achievements: achievementsTotal,
+          total: recalculatedPoints.total
+        });
+        
+        // Step 2: Update userProgress with fresh sessionStorage data
+        if (setUserProgress) {
+          setUserProgress(prev => ({
+            ...prev,
+            points: recalculatedPoints
+          }));
+          console.log('✅ Updated userProgress with fresh points');
+        }
+        
+        // Step 3: Update sessionStorage with recalculated data
+        sessionStorage.setItem('ccube_user_points', JSON.stringify(recalculatedPoints));
+        
+      } else {
+        console.log('⚠️ No sessionStorage data found');
+      }
+      
+      // Step 4: Force component re-render
+      setForceRefresh(prev => prev + 1);
+      
+      console.log('🎯 Manual refresh completed successfully');
+      
+    } catch (error) {
+      console.error('❌ Error during refresh:', error);
+    } finally {
+      // Add a small delay for better user feedback
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, 500);
+    }
+  };
+
   // Auto-refresh points when component is viewed
   useEffect(() => {
-    const refreshPoints = () => {
+    const autoRefreshPoints = () => {
       console.log('🔄 MigratePointDashboard - Auto-refreshing points...');
       setForceRefresh(prev => prev + 1);
     };
 
     // Refresh immediately when component mounts
-    refreshPoints();
+    autoRefreshPoints();
 
     // Refresh when window gains focus (user switches back from another tab/app)
-    window.addEventListener('focus', refreshPoints);
+    window.addEventListener('focus', autoRefreshPoints);
     
     // Refresh when user clicks on this tab/section  
-    const interval = setInterval(refreshPoints, 2000); // Every 2 seconds for real-time sync
+    const interval = setInterval(autoRefreshPoints, 3000); // Every 3 seconds for real-time sync
 
     return () => {
-      window.removeEventListener('focus', refreshPoints);
+      window.removeEventListener('focus', autoRefreshPoints);
       clearInterval(interval);
     };
   }, []);
@@ -532,35 +656,7 @@ const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoint
     }
   };
 
-  const handleAddDemoPoints = () => {
-    console.log('🎮 Adding demo points...');
-    console.log('📝 addPoints function available:', !!addPoints);
-    console.log('📊 Current points before adding:', points);
-    
-    if (addPoints) {
-      console.log('✅ Calling addPoints functions...');
-      addPoints('gamingHub', 'blockchainBasics', 150);
-      addPoints('gamingHub', 'smartContracts', 200);
-      addPoints('gamingHub', 'defiProtocols', 180);
-      addPoints('storyMode', 'chapter1', 250);
-      addPoints('storyMode', 'chapter2', 300);
-      addPoints('achievements', '', 100);
-      
-      console.log('🎉 Demo points added! Total should be 1180 points.');
-      
-      // Force refresh after a short delay to allow state updates
-      setTimeout(() => {
-        const savedPoints = sessionStorage.getItem('ccube_user_points');
-        console.log('💾 sessionStorage after adding points:', savedPoints);
-        setForceRefresh(prev => prev + 1);
-      }, 100);
-      
-      alert("Demo points added! Check console logs and the dashboard for updated values.");
-    } else {
-      console.error('❌ addPoints function not available');
-      alert("Error: addPoints function not available!");
-    }
-  };
+
 
   return (
     <MigrateContainer>
@@ -588,19 +684,33 @@ const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoint
           SessionStorage has points: {debugInfo.sessionStoragePoints ? '✅' : '❌'}<br/>
           Computed points total: {debugInfo.computedPointsTotal}<br/>
           <strong>📊 Points Breakdown:</strong><br/>
-          • Gaming Hub Total: {points.gamingHub ? Object.values(points.gamingHub).reduce((sum, val) => sum + val, 0) : 'Error'}<br/>
-          • Story Mode Total: {points.storyMode ? Object.values(points.storyMode).reduce((sum, val) => sum + val, 0) : 'Error'}<br/>
+          • Gaming Hub Total: {calculateGamingHubPoints()}<br/>
+          • Story Mode Total: {calculateStoryModePoints()}<br/>
           • Achievements: {points.achievements || 0}<br/>
           <strong>🎮 Gaming Hub Details:</strong><br/>
-          • Blockchain Basics: {points.gamingHub?.blockchainBasics || 0}<br/>
-          • Smart Contracts: {points.gamingHub?.smartContracts || 0}<br/>
-          • DeFi Protocols: {points.gamingHub?.defiProtocols || 0}<br/>
-          • NFTs Web3: {points.gamingHub?.nftsWeb3 || 0}<br/>
+          {(() => {
+            const categories = getGamingHubCategoryPoints();
+            const entries = Object.entries(categories);
+            if (entries.length === 0) return '• No Gaming Hub points yet';
+            return entries.map(([key, value], index) => (
+              <span key={key}>
+                • {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: {value}
+                {index < entries.length - 1 && <br/>}
+              </span>
+            ));
+          })()}<br/>
           <strong>📖 Story Mode Details:</strong><br/>
-          • Chapter 1: {points.storyMode?.chapter1 || 0}<br/>
-          • Chapter 2: {points.storyMode?.chapter2 || 0}<br/>
-          • Chapter 3: {points.storyMode?.chapter3 || 0}<br/>
-          • Chapter 4: {points.storyMode?.chapter4 || 0}<br/>
+          {(() => {
+            const chapters = getStoryModeChapterPoints();
+            const entries = Object.entries(chapters);
+            if (entries.length === 0) return '• No Story Mode points yet';
+            return entries.map(([key, value], index) => (
+              <span key={key}>
+                • {key.replace(/-/g, ' ').replace(/^./, str => str.toUpperCase())}: {value} pts
+                {index < entries.length - 1 && <br/>}
+              </span>
+            ));
+          })()}<br/>
           Timestamp: {debugInfo.timestamp}
         </div>
       )}
@@ -720,26 +830,42 @@ const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoint
         </TokenInstructions>
       </TokenInfoCard>
 
-      {/* Refresh Button */}
+      {/* Enhanced Refresh Button */}
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
         <button
           onClick={() => {
-            console.log('🔄 Manual refresh triggered');
-            setForceRefresh(prev => prev + 1);
+            console.log('🔄 Manual comprehensive refresh triggered');
+            refreshPointsFromSource();
           }}
+          disabled={isRefreshing}
           style={{
-            background: 'linear-gradient(135deg, #10b981, #059669)',
+            background: isRefreshing 
+              ? 'linear-gradient(135deg, #6b7280, #4b5563)' 
+              : 'linear-gradient(135deg, #10b981, #059669)',
             color: 'white',
             border: 'none',
-            padding: '8px 16px',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontWeight: '500'
+            padding: '10px 20px',
+            borderRadius: '8px',
+            cursor: isRefreshing ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            fontWeight: '600',
+            transition: 'all 0.3s ease',
+            opacity: isRefreshing ? 0.7 : 1
           }}
         >
-          🔄 Refresh Points
+          {isRefreshing ? (
+            <>⏳ Refreshing Points...</>
+          ) : (
+            <>🔄 Sync Latest Points from Gaming Hub & Story Mode</>
+          )}
         </button>
+        <div style={{ 
+          fontSize: '12px', 
+          color: '#64748b', 
+          marginTop: '5px' 
+        }}>
+          Click to get the most recent scores from all sections
+        </div>
       </div>
 
       {/* Total Stats Overview */}
@@ -750,12 +876,12 @@ const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoint
           <StatDescription>Ready for migration</StatDescription>
         </StatCard>
         <StatCard>
-          <StatValue>{points.gamingHub ? Object.values(points.gamingHub).reduce((sum, val) => sum + val, 0).toLocaleString() : '0'}</StatValue>
+          <StatValue>{calculateGamingHubPoints().toLocaleString()}</StatValue>
           <StatLabel>Gaming Hub Points</StatLabel>
           <StatDescription>From all game categories</StatDescription>
         </StatCard>
         <StatCard>
-          <StatValue>{points.storyMode ? Object.values(points.storyMode).reduce((sum, val) => sum + val, 0).toLocaleString() : '0'}</StatValue>
+          <StatValue>{calculateStoryModePoints().toLocaleString()}</StatValue>
           <StatLabel>Story Mode Points</StatLabel>
           <StatDescription>From completed chapters</StatDescription>
         </StatCard>
@@ -768,17 +894,6 @@ const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoint
 
       {/* Demo and Migrate Buttons */}
       <MigrateButtonContainer>
-        {addPoints && points.total === 0 && (
-          <MigrateButton 
-            onClick={handleAddDemoPoints}
-            style={{ 
-              background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
-              marginRight: '20px'
-            }}
-          >
-            🎮 Add Demo Points (for testing)
-          </MigrateButton>
-        )}
         
         {/* Refresh Points Button - Always visible for debugging */}
         <MigrateButton 
@@ -799,10 +914,10 @@ const MigratePointDashboard = ({ userProgress, walletData, addPoints, resetPoint
           onClick={() => {
             console.log('🗑️ Clearing all points and localStorage...');
             
-            // Clear sessionStorage and all progress
+            // Clear points and game progress but preserve story position
             sessionStorage.removeItem('ccube_user_points');
             sessionStorage.removeItem('ccube_game_progress');
-            sessionStorage.removeItem('ccube_story_progress');
+            // DON'T clear story progress - user should retain their chapter/question position
             
             // Reset points using the reset function
             if (resetPoints) {

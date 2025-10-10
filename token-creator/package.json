@@ -1,0 +1,30 @@
+{
+  "name": "bsc-token-creator",
+  "version": "1.0.0",
+  "description": "BSC Testnet Token Creator",
+  "main": "deploy.js",
+  "scripts": {
+    "configure": "node configure.js",
+    "test-config": "node test-config.js",
+    "deploy": "node deploy.js",
+    "compile": "node compile.js",
+    "verify": "node verify.js",
+    "setup": "node setup.js"
+  },
+  "dependencies": {
+    "ethers": "^6.8.0",
+    "solc": "^0.8.19",
+    "dotenv": "^16.3.1",
+    "axios": "^1.5.0"
+  },
+  "keywords": [
+    "bsc",
+    "binance",
+    "testnet",
+    "token",
+    "erc20",
+    "smart-contract"
+  ],
+  "author": "C-Cube",
+  "license": "MIT"
+}

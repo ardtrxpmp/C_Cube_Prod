@@ -1,138 +1,95 @@
-/**
- * TokenStorage.js
- * Utility for persistent storage of token data in the Cold Wallet app
- */
-
-import EnvironmentDetection from './EnvironmentDetection';
-
-// Detect if we're in an Electron environment
-const isElectron = () => {
-  return EnvironmentDetection.isElectron();
-};
-
+// Token storage utilities for cold wallet
 class TokenStorage {
-  /**
-   * Save tokens to persistent storage
-   * @param {Array} tokens - Array of token objects to save
-   * @returns {Promise} - Result of the save operation
-   */
-  static async saveTokens(tokens) {
-    if (isElectron()) {
-      try {
-        // First save to app data directory for regular persistence
-        await window.electron.saveToAppData({
-          fileName: 'user-tokens.json',
-          data: JSON.stringify(tokens)
-        });
-        
-        // Also save to localStorage as backup
-        localStorage.setItem('userTokens', JSON.stringify(tokens));
-        
-        return { success: true };
-      } catch (error) {
-        console.error('Failed to save tokens to app data:', error);
-        
-        // Fall back to localStorage
-        localStorage.setItem('userTokens', JSON.stringify(tokens));
-        return { 
-          success: false, 
-          fallbackSuccess: true,
-          message: 'Saved to localStorage only' 
-        };
-      }
-    } else {
-      // Web mode - use localStorage only
-      localStorage.setItem('userTokens', JSON.stringify(tokens));
-      return { success: true };
-    }
+  constructor() {
+    this.storageKey = 'cold_wallet_tokens';
   }
 
-  /**
-   * Load tokens from persistent storage
-   * @returns {Promise<Array>} - Array of token objects
-   */
-  static async loadTokens() {
-    if (isElectron()) {
-      try {
-        // Try to load from app data directory first
-        const result = await window.electron.loadFromAppData({
-          fileName: 'user-tokens.json'
-        });
-        
-        if (result.success) {
-          return JSON.parse(result.data);
-        }
-        
-        // Fall back to localStorage if app data load failed
-        const savedTokens = localStorage.getItem('userTokens');
-        return savedTokens ? JSON.parse(savedTokens) : [];
-      } catch (error) {
-        console.error('Failed to load tokens from app data:', error);
-        
-        // Fall back to localStorage
-        const savedTokens = localStorage.getItem('userTokens');
-        return savedTokens ? JSON.parse(savedTokens) : [];
-      }
-    } else {
-      // Web mode - use localStorage only
-      const savedTokens = localStorage.getItem('userTokens');
-      return savedTokens ? JSON.parse(savedTokens) : [];
-    }
-  }
-
-  /**
-   * Export tokens to a user-selected file
-   * @param {Array} tokens - Array of token objects to export
-   * @returns {Promise} - Result of the export operation
-   */
-  static async exportTokens(tokens) {
-    if (!isElectron()) {
-      throw new Error('Token export is only available in the desktop app');
-    }
-
+  // Get all stored tokens
+  getTokens() {
     try {
-      // First get file path from dialog
-      const exportResult = await window.electron.exportTokens();
-      
-      if (!exportResult.success) {
-        return exportResult;
-      }
-      
-      // Then save data to that path
-      const saveResult = await window.electron.saveTokenData({
-        filePath: exportResult.filePath,
-        data: JSON.stringify(tokens, null, 2) // Pretty print with indentation
-      });
-      
-      return saveResult;
+      const stored = localStorage.getItem(this.storageKey);
+      return stored ? JSON.parse(stored) : [];
     } catch (error) {
-      console.error('Token export failed:', error);
-      return {
-        success: false,
-        message: `Export failed: ${error.message}`
-      };
+      console.error('Error retrieving tokens:', error);
+      return [];
     }
   }
 
-  /**
-   * Import tokens from a user-selected file
-   * @returns {Promise<Object>} - Result with imported tokens if successful
-   */
-  static async importTokens() {
-    if (!isElectron()) {
-      throw new Error('Token import is only available in the desktop app');
-    }
-
+  // Save token
+  saveToken(token) {
     try {
-      return await window.electron.importTokens();
+      const tokens = this.getTokens();
+      const existingIndex = tokens.findIndex(t => 
+        t.address?.toLowerCase() === token.address?.toLowerCase() && 
+        t.chainId === token.chainId
+      );
+
+      if (existingIndex >= 0) {
+        tokens[existingIndex] = { ...tokens[existingIndex], ...token };
+      } else {
+        tokens.push(token);
+      }
+
+      localStorage.setItem(this.storageKey, JSON.stringify(tokens));
+      return true;
     } catch (error) {
-      console.error('Token import failed:', error);
-      return {
-        success: false,
-        message: `Import failed: ${error.message}`
-      };
+      console.error('Error saving token:', error);
+      return false;
     }
+  }
+
+  // Remove token
+  removeToken(address, chainId) {
+    try {
+      const tokens = this.getTokens();
+      const filteredTokens = tokens.filter(token => 
+        !(token.address?.toLowerCase() === address?.toLowerCase() && token.chainId === chainId)
+      );
+      
+      localStorage.setItem(this.storageKey, JSON.stringify(filteredTokens));
+      return true;
+    } catch (error) {
+      console.error('Error removing token:', error);
+      return false;
+    }
+  }
+
+  // Get tokens for specific network
+  getTokensByNetwork(chainId) {
+    const allTokens = this.getTokens();
+    return allTokens.filter(token => token.chainId === chainId);
+  }
+
+  // Clear all tokens
+  clearAll() {
+    try {
+      localStorage.removeItem(this.storageKey);
+      return true;
+    } catch (error) {
+      console.error('Error clearing tokens:', error);
+      return false;
+    }
+  }
+
+  // Import tokens from backup
+  importTokens(tokenData) {
+    try {
+      if (Array.isArray(tokenData)) {
+        localStorage.setItem(this.storageKey, JSON.stringify(tokenData));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error importing tokens:', error);
+      return false;
+    }
+  }
+
+  // Export tokens for backup
+  exportTokens() {
+    return this.getTokens();
   }
 }
 
-export default TokenStorage;
+// Export singleton instance
+export default new TokenStorage();

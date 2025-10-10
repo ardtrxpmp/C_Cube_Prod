@@ -186,18 +186,18 @@ const Layout = ({ children }) => {
         <Nav>
           <NavMenu>
             <NavItem>
-              <NavLink to="/apps/resources" className={({ isActive }) => isActive ? 'active' : ''}>
+              <NavLink to="resources" className={({ isActive }) => isActive ? 'active' : ''}>
                 Resources
               </NavLink>
             </NavItem>
             <NavItem>
-              <NavLink to="/apps/wallet" className={({ isActive }) => isActive ? 'active' : ''}>
+              <NavLink to="wallet" className={({ isActive }) => isActive ? 'active' : ''}>
                 Cold Wallet
               </NavLink>
             </NavItem>
             {showBroadcastLink && (
               <NavItem>
-                <NavLink to="/apps/broadcast" className={({ isActive }) => isActive ? 'active' : ''}>
+                <NavLink to="broadcast" className={({ isActive }) => isActive ? 'active' : ''}>
                   Broadcast
                 </NavLink>
               </NavItem>

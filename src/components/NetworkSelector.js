@@ -86,15 +86,20 @@ const NetworkSelector = () => {
     switchNetwork(networkId);
   };
 
+  // Safety check - if selectedNetwork is undefined, don't render or use first network as fallback
+  if (!selectedNetwork) {
+    return null;
+  }
+
   return (
     <NetworkSelectorWrapper>
       <NetworkLabel>Network</NetworkLabel>
       <SelectWrapper>
         <NetworkSelect 
-          value={selectedNetwork.id} 
+          value={selectedNetwork.id || ''} 
           onChange={handleNetworkChange}
         >
-          {networks.map(network => (
+          {networks && networks.map(network => (
             <option 
               key={network.id} 
               value={network.id}

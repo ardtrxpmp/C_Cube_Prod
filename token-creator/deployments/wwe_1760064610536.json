@@ -1,0 +1,13 @@
+{
+  "contractAddress": "0x6b1Ed33b8Bda68822d18B95CB0E6D91E3819B5B7",
+  "transactionHash": "0x5a2ada60335bc293bd68335cf16a7056b4388245429ee1afa4089d9d922ea617",
+  "tokenName": "wwe",
+  "tokenSymbol": "wwe",
+  "decimals": 18,
+  "initialSupply": "1111",
+  "ownerAddress": "0x388211c545b25B69cf03bBc1EE897076ca2f944D",
+  "network": "BSC Testnet",
+  "chainId": 97,
+  "deployedAt": "2025-10-10T02:50:10.536Z",
+  "explorerUrl": "https://testnet.bscscan.com/address/0x6b1Ed33b8Bda68822d18B95CB0E6D91E3819B5B7"
+}

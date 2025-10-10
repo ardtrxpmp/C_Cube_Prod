@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styled, { keyframes } from 'styled-components';
 
 const storyFade = keyframes`
@@ -383,51 +383,146 @@ const NavButton = styled.button`
 `;
 
 const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
-  const [currentChapter, setCurrentChapter] = useState(0);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedChoice, setSelectedChoice] = useState(null);
-  const [chapterScores, setChapterScores] = useState({});
+  // Initialize state with persistent data if available
+  const initializeState = () => {
+    try {
+      const savedStoryProgress = sessionStorage.getItem('ccube_story_progress');
+      if (savedStoryProgress) {
+        const storyData = JSON.parse(savedStoryProgress);
+        console.log('🔄 Initializing state with saved data:', storyData);
+        return storyData;
+      }
+    } catch (err) {
+      console.error('❌ Error reading saved state during initialization:', err);
+      sessionStorage.removeItem('ccube_story_progress');
+    }
+    console.log('🆕 Initializing with default state - no saved data found');
+    return null;
+  };
+
+  const savedData = initializeState();
+  
+  const [currentChapter, setCurrentChapter] = useState(savedData?.currentChapter ?? 0);
+  const [currentQuestion, setCurrentQuestion] = useState(savedData?.currentQuestion ?? 0);
+  const [selectedChoice, setSelectedChoice] = useState(savedData?.selectedChoice ?? null);
+  const [chapterScores, setChapterScores] = useState(savedData?.chapterScores ?? {});
   const [totalPoints, setTotalPoints] = useState(0);
   const [showPointsAnimation, setShowPointsAnimation] = useState(false);
   const [animationText, setAnimationText] = useState('');
-  const [showDashboard, setShowDashboard] = useState(true);
+  const [showDashboard, setShowDashboard] = useState(savedData?.showDashboard ?? true);
 
-  // Load story progress on component mount
+  // Log component initialization
   useEffect(() => {
-    const savedStoryProgress = sessionStorage.getItem('ccube_story_progress');
-    if (savedStoryProgress) {
-      try {
-        const storyData = JSON.parse(savedStoryProgress);
-        console.log('📖 Loading saved story progress:', storyData);
-        
-        if (storyData.currentChapter !== undefined) setCurrentChapter(storyData.currentChapter);
-        if (storyData.currentQuestion !== undefined) setCurrentQuestion(storyData.currentQuestion);
-        if (storyData.chapterScores) setChapterScores(storyData.chapterScores);
-        if (storyData.totalPoints !== undefined) setTotalPoints(storyData.totalPoints);
-        if (storyData.selectedChoice !== undefined) setSelectedChoice(storyData.selectedChoice);
-      } catch (err) {
-        console.error('Error loading story progress:', err);
-        sessionStorage.removeItem('ccube_story_progress');
-      }
-    }
+    console.log('📖 Story Mode component initialized with state:', {
+      chapter: currentChapter,
+      question: currentQuestion,
+      hasScores: Object.keys(chapterScores).length > 0,
+      selectedChoice,
+      dashboardVisible: showDashboard
+    });
   }, []);
 
-  // Save story progress whenever key states change
+  // Save story progress whenever key states change (with debouncing)
   useEffect(() => {
-    const storyData = {
-      currentChapter,
-      currentQuestion,
-      chapterScores,
-      totalPoints,
-      selectedChoice,
-      timestamp: new Date().toISOString()
+    const saveTimer = setTimeout(() => {
+      const storyData = {
+        currentChapter,
+        currentQuestion,
+        chapterScores,
+        selectedChoice,
+        showDashboard,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log('💾 Saving story progress:', {
+        chapter: storyData.currentChapter,
+        question: storyData.currentQuestion, 
+        scores: Object.keys(storyData.chapterScores).length,
+        selectedChoice: storyData.selectedChoice,
+        dashboardVisible: storyData.showDashboard
+      });
+      
+      try {
+        sessionStorage.setItem('ccube_story_progress', JSON.stringify(storyData));
+        console.log('✅ Story progress saved successfully');
+      } catch (err) {
+        console.error('❌ Error saving story progress:', err);
+      }
+    }, 100); // Small delay to debounce rapid state changes
+
+    return () => clearTimeout(saveTimer);
+  }, [currentChapter, currentQuestion, chapterScores, selectedChoice, showDashboard]);
+
+  // Debug helper to verify persistence
+  const verifyPersistence = () => {
+    const saved = sessionStorage.getItem('ccube_story_progress');
+    console.log('🔍 Current sessionStorage content:', saved);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        console.log('🔍 Parsed data:', parsed);
+        console.log('🔍 Current state vs saved:', {
+          currentState: { currentChapter, currentQuestion, chapterScores, selectedChoice, showDashboard },
+          savedState: parsed
+        });
+      } catch (err) {
+        console.error('🔍 Error parsing saved data:', err);
+      }
+    } else {
+      console.log('🔍 No data in sessionStorage');
+    }
+  };
+
+  // Call verification on component mount and when state changes
+  useEffect(() => {
+    verifyPersistence();
+  }, [currentChapter, currentQuestion]);
+
+  // Helper function to shuffle array with deterministic seed
+  const shuffleArrayWithSeed = (array, seed) => {
+    const shuffled = [...array];
+    let currentSeed = seed;
+    
+    // Simple seeded random number generator
+    const seededRandom = () => {
+      currentSeed = (currentSeed * 9301 + 49297) % 233280;
+      return currentSeed / 233280;
     };
     
-    console.log('💾 Saving story progress:', storyData);
-    sessionStorage.setItem('ccube_story_progress', JSON.stringify(storyData));
-  }, [currentChapter, currentQuestion, chapterScores, totalPoints, selectedChoice]);
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(seededRandom() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
 
-  const storyChapters = [
+  // Get or create persistent shuffle seed
+  const getShuffleSeed = () => {
+    let seed = sessionStorage.getItem('ccube_story_shuffle_seed');
+    if (!seed) {
+      seed = Math.floor(Math.random() * 1000000);
+      sessionStorage.setItem('ccube_story_shuffle_seed', seed.toString());
+      console.log('🎲 Created new shuffle seed:', seed);
+    } else {
+      console.log('🎲 Using existing shuffle seed:', seed);
+    }
+    return parseInt(seed);
+  };
+
+  // Helper function to shuffle choices and update correctChoice index
+  const shuffleQuestionChoices = (question, seed) => {
+    const originalCorrectAnswer = question.choices[question.correctChoice];
+    const shuffledChoices = shuffleArrayWithSeed(question.choices, seed);
+    const newCorrectIndex = shuffledChoices.indexOf(originalCorrectAnswer);
+    
+    return {
+      ...question,
+      choices: shuffledChoices,
+      correctChoice: newCorrectIndex
+    };
+  };
+
+  const originalStoryChapters = [
     {
       title: "🏗️ Blockchain Fundamentals",
       description: "Master the core concepts of blockchain technology",
@@ -1550,12 +1645,36 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
     }
   ];
 
+  // Create shuffled version of story chapters with randomized choice positions
+  const storyChapters = useMemo(() => {
+    const shuffleSeed = getShuffleSeed();
+    let currentSeed = shuffleSeed;
+    
+    const shuffledChapters = originalStoryChapters.map((chapter, chapterIndex) => ({
+      ...chapter,
+      questions: chapter.questions.map((question, questionIndex) => {
+        // Create unique seed for each question based on chapter and question index
+        const questionSeed = currentSeed + (chapterIndex * 1000) + questionIndex;
+        const shuffledQuestion = shuffleQuestionChoices(question, questionSeed);
+        console.log(`🔀 Question shuffled: "${question.dialogue.text}" - Correct answer moved from position ${question.correctChoice} to position ${shuffledQuestion.correctChoice}`);
+        return shuffledQuestion;
+      })
+    }));
+    console.log('🎲 All Story Mode questions shuffled with persistent seed! Answers will remain consistent.');
+    return shuffledChapters;
+  }, []); // Empty dependency array ensures shuffling happens only once per component mount
+
   const currentStory = storyChapters[currentChapter];
   const currentQuestionData = currentStory.questions[currentQuestion];
   const chapterProgress = (currentQuestion / currentStory.questions.length) * 100;
   const totalProgress = ((currentChapter * 10 + currentQuestion) / 100) * 100;
 
   const handleChoiceSelect = (choiceIndex) => {
+    // Prevent multiple selections - user can only select once per question
+    if (selectedChoice !== null) {
+      return;
+    }
+    
     setSelectedChoice(choiceIndex);
     
     // Update chapter scores
@@ -1570,41 +1689,50 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
       }
     }));
     
-    // Award 1 point for each question attempt (correct or incorrect)
-    const newTotalPoints = totalPoints + 1;
-    setTotalPoints(newTotalPoints);
+    // Points are only awarded through the global system for correct answers
+    // No internal totalPoints tracking needed
 
-    // Award points to the global system (only for correct answers and only once per question)
+    // Award points to the global system (1 point per CORRECT answer only)
     if (addPoints && isCorrect) {
       const questionKey = `story-ch${currentChapter + 1}-q${currentQuestion + 1}`;
       const hasBeenAnswered = userProgress?.completedNodes?.includes(questionKey) || false;
       
       if (!hasBeenAnswered) {
-        const questionPoints = 5; // Points for correct answers
+        const questionPoints = 1; // 1 point per correct answer
         const chapterKey = `chapter${currentChapter + 1}`; // chapter1, chapter2, etc.
         addPoints('storyMode', chapterKey, questionPoints);
-        console.log(`✅ First time correct answer in Chapter ${currentChapter + 1}, Question ${currentQuestion + 1}! Awarded ${questionPoints} points.`);
+        console.log(`✅ Question ${currentQuestion + 1} in Chapter ${currentChapter + 1} answered CORRECTLY! Awarded ${questionPoints} point.`);
         
         // Mark this question as answered correctly
         setUserProgress(prev => ({
           ...prev,
           completedNodes: [...(prev.completedNodes || []), questionKey]
         }));
+        
+        // Trigger dashboard refresh to show new points
+        setRefreshTrigger(prev => prev + 1);
       } else {
         console.log(`⚠️ Question ${currentQuestion + 1} in Chapter ${currentChapter + 1} already answered correctly - no additional points.`);
       }
+    } else if (addPoints && !isCorrect) {
+      console.log(`❌ Question ${currentQuestion + 1} in Chapter ${currentChapter + 1} answered incorrectly - no points awarded.`);
     }
     
     // Check for milestones and show appropriate animation
-    let animation = isCorrect ? '+1 Point! ✅' : '+1 Point! 📚';
+    let animation = isCorrect ? '+1 Point! ✅' : 'Incorrect ❌';
     
-    // Milestone celebrations
-    if (newTotalPoints === 10) animation = '🎉 10 Points Milestone!';
-    else if (newTotalPoints === 25) animation = '🌟 25 Points Achievement!';
-    else if (newTotalPoints === 50) animation = '🚀 50 Points Mastery!';
-    else if (newTotalPoints === 75) animation = '💎 75 Points Expert!';
-    else if (newTotalPoints === 100) animation = '👑 100 Points Champion!';
-    else if (newTotalPoints % 20 === 0 && newTotalPoints > 100) animation = `🔥 ${newTotalPoints} Points Streak!`;
+    // Get current persistent points for milestone checking (only for correct answers with points)
+    if (isCorrect && addPoints) {
+      const currentPersistentPoints = calculateStoryModePoints();
+      
+      // Milestone celebrations based on persistent points
+      if (currentPersistentPoints === 10) animation = '🎉 10 Points Milestone!';
+      else if (currentPersistentPoints === 25) animation = '🌟 25 Points Achievement!';
+      else if (currentPersistentPoints === 50) animation = '🚀 50 Points Mastery!';
+      else if (currentPersistentPoints === 75) animation = '💎 75 Points Expert!';
+      else if (currentPersistentPoints === 100) animation = '👑 100 Points Champion!';
+      else if (currentPersistentPoints % 20 === 0 && currentPersistentPoints > 100) animation = `🔥 ${currentPersistentPoints} Points Streak!`;
+    }
     
     setAnimationText(animation);
     setShowPointsAnimation(true);
@@ -1625,52 +1753,13 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedChoice(null);
     } else if (currentChapter < storyChapters.length - 1) {
-      // Chapter completed! Award points before moving to next chapter (only once per chapter)
-      if (addPoints) {
-        const chapterCompletionKey = `story-chapter${currentChapter + 1}-completed`;
-        const hasBeenCompleted = userProgress?.completedNodes?.includes(chapterCompletionKey) || false;
-        
-        if (!hasBeenCompleted) {
-          const chapterPoints = 50; // Points for completing a chapter
-          const chapterKey = `chapter${currentChapter + 1}`; // chapter1, chapter2, etc.
-          addPoints('storyMode', chapterKey, chapterPoints);
-          console.log(`📖 Chapter ${currentChapter + 1} completed for first time! Awarded ${chapterPoints} points.`);
-          
-          // Mark this chapter as completed
-          setUserProgress(prev => ({
-            ...prev,
-            completedNodes: [...(prev.completedNodes || []), chapterCompletionKey]
-          }));
-        } else {
-          console.log(`⚠️ Chapter ${currentChapter + 1} already completed - no additional points.`);
-        }
-      }
-
-      // Next chapter
+      // Next chapter (no bonus points - just 1 point per question)
       setCurrentChapter(currentChapter + 1);
       setCurrentQuestion(0);
       setSelectedChoice(null);
     } else {
-      // Final chapter completed! (only award points once)
-      if (addPoints) {
-        const finalChapterCompletionKey = `story-final-chapter-completed`;
-        const hasBeenCompleted = userProgress?.completedNodes?.includes(finalChapterCompletionKey) || false;
-        
-        if (!hasBeenCompleted) {
-          const finalChapterPoints = 75; // Extra points for final chapter
-          const finalChapterKey = `chapter${currentChapter + 1}`;
-          addPoints('storyMode', finalChapterKey, finalChapterPoints);
-          console.log(`🏆 Final chapter (${currentChapter + 1}) completed for first time! Awarded ${finalChapterPoints} points.`);
-          
-          // Mark final chapter as completed
-          setUserProgress(prev => ({
-            ...prev,
-            completedNodes: [...(prev.completedNodes || []), finalChapterCompletionKey]
-          }));
-        } else {
-          console.log(`⚠️ Final chapter already completed - no additional points.`);
-        }
-      }
+      // Story completed! (no bonus points - just 1 point per question)
+      console.log(`🏆 Story mode completed!`);
     }
   };
 
@@ -1733,6 +1822,38 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
     return Math.round((answered / 10) * 100); // 10 questions per chapter
   };
 
+  // Calculate actual story mode points for display (should match migrate points)
+  const calculateStoryModePoints = () => {
+    try {
+      const savedPoints = sessionStorage.getItem('ccube_user_points');
+      if (savedPoints) {
+        const pointsData = JSON.parse(savedPoints);
+        if (pointsData.storyMode) {
+          return Object.values(pointsData.storyMode).reduce((sum, val) => sum + val, 0);
+        }
+      }
+    } catch (e) {
+      console.error('Error reading story mode points:', e);
+    }
+    return 0;
+  };
+
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  // Calculate points with dependency on refresh trigger
+  const totalStoryModePoints = useMemo(() => {
+    return calculateStoryModePoints();
+  }, [refreshTrigger]);
+
+  // Trigger refresh when points might have changed
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshTrigger(prev => prev + 1);
+    }, 1000); // Check every second for point updates
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <StoryContainer>
       <MainContentWrapper>
@@ -1790,7 +1911,9 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
                   ? (index === currentQuestionData.correctChoice 
                      ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.5), rgba(34, 197, 94, 0.5))'
                      : 'linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(220, 38, 38, 0.3))')
-                  : undefined
+                  : undefined,
+                cursor: selectedChoice !== null ? 'not-allowed' : 'pointer',
+                opacity: selectedChoice !== null && selectedChoice !== index ? 0.6 : 1
               }}
             >
               {choice}
@@ -1874,7 +1997,7 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
             
             <PointsContainer>
               <PointsLabel>Total Points Earned</PointsLabel>
-              <PointsValue>{totalPoints}</PointsValue>
+              <PointsValue>{totalStoryModePoints}</PointsValue>
             </PointsContainer>
             
             <StatsGrid>
@@ -1904,24 +2027,30 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
                     Ch{index + 1}: {chapter.title.replace(/🏗️|🔐|⛏️|💰|♦️|🏦|🎨|🔗|🏛️|🌐/g, '').trim()}
                   </span>
                   <span style={{ color: getChapterProgress(index) === 100 ? '#10b981' : '#64748b' }}>
-                    {getChapterScore(index)}/10 ({getChapterProgress(index)}%)
+                    {getChapterScore(index)} pts ({getChapterProgress(index)}%)
                   </span>
                 </ChapterProgressItem>
               ))}
             </ChapterProgressList>
             
-            {totalPoints > 0 && (
+            {totalStoryModePoints > 0 && (
               <button
                 onClick={() => {
-                  console.log('🔄 Resetting story progress');
+                  console.log('🔄 Resetting all story progress and shuffling');
+                  
+                  // Reset all state
                   setTotalPoints(0);
                   setChapterScores({});
                   setCurrentChapter(0);
                   setCurrentQuestion(0);
                   setSelectedChoice(null);
+                  setShowDashboard(true);
                   
-                  // Clear saved story progress
+                  // Clear all saved story data including shuffle seed
                   sessionStorage.removeItem('ccube_story_progress');
+                  sessionStorage.removeItem('ccube_story_shuffle_seed');
+                  
+                  console.log('✅ Story progress completely reset - refresh page for new question shuffle');
                 }}
                 style={{
                   width: '100%',

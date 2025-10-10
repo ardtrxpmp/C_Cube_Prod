@@ -378,6 +378,13 @@ const Header = () => {
           >
             Learn
           </NavItem>
+          <NavItem
+            to="/ai-tutor"
+            className={isActive('/ai-tutor') ? 'active' : ''}
+            onClick={handleMobileMenuClose}
+          >
+            Earn
+          </NavItem>
 
           <AppsDropdown>
             <NavButton onClick={() => {
@@ -452,6 +459,14 @@ const Header = () => {
           </AppsDropdown>
 
           <NavItem
+            to="/playground"
+            className={isActive('/playground') ? 'active' : ''}
+            onClick={handleMobileMenuClose}
+          >
+            Playground
+          </NavItem>
+
+          <NavItem
             to="/faq"
             className={isActive('/faq') ? 'active' : ''}
             onClick={handleMobileMenuClose}
@@ -473,8 +488,8 @@ const Header = () => {
             About Us
           </NavItem>
 
-          <LaunchAppButton as={Link} to="/apps" onClick={handleMobileMenuClose}>
-            Launch App
+          <LaunchAppButton as={Link} to="/launch-token" onClick={handleMobileMenuClose}>
+            Create Token
           </LaunchAppButton>
         </Nav>
 

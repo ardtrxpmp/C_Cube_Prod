@@ -682,7 +682,6 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
       title: '📚 Blockchain Fundamentals',
       icon: '🎯',
       description: 'Master the core concepts of distributed ledger technology',
-      reward: '50 XP',
       difficulty: 'Beginner',
       order: 1,
       prerequisite: null,
@@ -701,7 +700,6 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
       title: '🔐 Cryptography Master',
       icon: '🛡️',
       description: 'Become an expert in blockchain security and cryptographic principles',
-      reward: '75 XP',
       difficulty: 'Intermediate',
       order: 2,
       prerequisite: 'blockchain-basics',
@@ -720,7 +718,6 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
       title: '💰 DeFi Adventure',
       icon: '🏦',
       description: 'Explore the world of decentralized finance protocols',
-      reward: '100 XP',
       difficulty: 'Advanced',
       order: 3,
       prerequisite: 'crypto-security',
@@ -739,7 +736,6 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
       title: '📝 Smart Contract Creator',
       icon: '⚡',
       description: 'Learn to build and deploy smart contracts',
-      reward: '125 XP',
       difficulty: 'Expert',
       order: 4,
       prerequisite: 'defi-explorer',
@@ -1062,50 +1058,59 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
     if (currentChallengeIndex < challenges.length - 1) {
       // Mark current challenge as completed
       if (activeQuest && challengeComplete) {
-        const challengeCompletedKey = `${activeQuest.id}-challenge-${currentChallengeIndex + 1}`;
-        if (!userProgress.completedNodes.includes(challengeCompletedKey)) {
+        // Use consistent key format for both tracking and checking
+        const challengeKey = `${activeQuest.id}-challenge-${currentChallengeIndex}`;
+        
+        if (!userProgress.completedNodes.includes(challengeKey)) {
+          // Award points based on challenge accuracy (only once per challenge)
+          if (addPoints) {
+            // Calculate challenge accuracy: correct answers in this completed challenge
+            const completedChallengeDropZones = challenges[currentChallengeIndex].dropZones;
+            let correctInThisChallenge = 0;
+            
+            // Count correct answers in the completed challenge
+            completedChallengeDropZones.forEach(zone => {
+              const content = dropZoneContents[zone.id];
+              if (content && content.length > 0 && content[0].isCorrect) {
+                correctInThisChallenge++;
+              }
+            });
+            
+            // Calculate points based on accuracy:
+            // 2/2 correct = 1 point, 1/2 correct = 0.5 points, 0/2 correct = 0 points
+            const totalQuestionsInChallenge = completedChallengeDropZones.length;
+            const challengePoints = correctInThisChallenge / totalQuestionsInChallenge;
+            
+            // Award points (including 0 points for 0 correct answers)
+            switch (activeQuest.id) {
+              case 'blockchain-basics':
+                addPoints('gamingHub', 'blockchainBasics', challengePoints);
+                break;
+              case 'crypto-security':
+                addPoints('gamingHub', 'smartContracts', challengePoints);
+                break;
+              case 'defi-explorer':
+                addPoints('gamingHub', 'defiProtocols', challengePoints);
+                break;
+              case 'nft-creator':
+                addPoints('gamingHub', 'nftsWeb3', challengePoints);
+                break;
+              default:
+                addPoints('gamingHub', 'blockchainBasics', challengePoints);
+            }
+            
+            console.log(`🎯 Challenge ${currentChallengeIndex + 1} completed! ${correctInThisChallenge}/${totalQuestionsInChallenge} correct = ${challengePoints} points awarded.`);
+          }
+          
+          // Mark this specific challenge as completed
           setUserProgress(prev => ({
             ...prev,
-            completedNodes: [...prev.completedNodes, challengeCompletedKey]
+            completedNodes: [...prev.completedNodes, challengeKey]
           }));
-
-          // Award points for completing individual challenges (only once per challenge)
-          if (addPoints) {
-            const challengeKey = `${activeQuest.id}-challenge-${currentChallengeIndex}`;
-            const hasBeenCompleted = userProgress.completedNodes.includes(challengeKey);
-            
-            if (!hasBeenCompleted) {
-              const challengePoints = 25; // Points for individual challenges
-              switch (activeQuest.id) {
-                case 'blockchain-basics':
-                  addPoints('gamingHub', 'blockchainBasics', challengePoints);
-                  break;
-                case 'crypto-security':
-                  addPoints('gamingHub', 'smartContracts', challengePoints);
-                  break;
-                case 'defi-explorer':
-                  addPoints('gamingHub', 'defiProtocols', challengePoints);
-                  break;
-                case 'nft-creator':
-                  addPoints('gamingHub', 'nftsWeb3', challengePoints);
-                  break;
-                default:
-                  addPoints('gamingHub', 'blockchainBasics', challengePoints);
-              }
-              
-              // Mark this specific challenge as completed
-              setUserProgress(prev => ({
-                ...prev,
-                completedNodes: [...prev.completedNodes, challengeKey]
-              }));
-              
-              console.log(`🎯 Challenge ${currentChallengeIndex + 1} completed for first time! Awarded ${challengePoints} points.`);
-            } else {
-              console.log(`⚠️ Challenge ${currentChallengeIndex + 1} already completed - no additional points awarded.`);
-            }
-            console.log(`✅ Challenge ${currentChallengeIndex + 1} of "${activeQuest.title}" completed!`);
-          }
+        } else {
+          console.log(`⚠️ Challenge ${currentChallengeIndex + 1} already completed - no additional points awarded.`);
         }
+        console.log(`✅ Challenge ${currentChallengeIndex + 1} of "${activeQuest.title}" completed!`);
       }
       
       setCurrentChallengeIndex(prev => prev + 1);
@@ -1116,48 +1121,59 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
     } else if (activeQuest && currentChallengeIndex === challenges.length - 1) {
       // Mark final challenge as completed
       if (challengeComplete) {
-        const finalChallengeKey = `${activeQuest.id}-challenge-${currentChallengeIndex + 1}`;
-        if (!userProgress.completedNodes.includes(finalChallengeKey)) {
+        // Use consistent key format for final challenge
+        const finalChallengeKey = `${activeQuest.id}-challenge-${currentChallengeIndex}`;
+        const questCompletionKey = `${activeQuest.id}-quest-completed`;
+        
+        // Check if both the final challenge AND quest completion haven't been tracked yet
+        if (!userProgress.completedNodes.includes(finalChallengeKey) && !userProgress.completedNodes.includes(questCompletionKey)) {
+          // Award points for completing the final challenge based on accuracy (only once per quest)
+          if (addPoints) {
+            // Calculate final challenge accuracy
+            const finalChallengeDropZones = challenges[currentChallengeIndex].dropZones;
+            let correctInFinalChallenge = 0;
+            
+            // Count correct answers in final challenge
+            finalChallengeDropZones.forEach(zone => {
+              const content = dropZoneContents[zone.id];
+              if (content && content.length > 0 && content[0].isCorrect) {
+                correctInFinalChallenge++;
+              }
+            });
+            
+            // Calculate points based on accuracy:
+            // 2/2 correct = 1 point, 1/2 correct = 0.5 points, 0/2 correct = 0 points
+            const totalQuestionsInFinalChallenge = finalChallengeDropZones.length;
+            const finalChallengePoints = correctInFinalChallenge / totalQuestionsInFinalChallenge;
+            
+            // Award final challenge points (no additional bonus, just the challenge points)
+            switch (activeQuest.id) {
+              case 'blockchain-basics':
+                addPoints('gamingHub', 'blockchainBasics', finalChallengePoints);
+                break;
+              case 'crypto-security':
+                addPoints('gamingHub', 'smartContracts', finalChallengePoints);
+                break;
+              case 'defi-explorer':
+                addPoints('gamingHub', 'defiProtocols', finalChallengePoints);
+                break;
+              case 'nft-creator':
+                addPoints('gamingHub', 'nftsWeb3', finalChallengePoints);
+                break;
+              default:
+                addPoints('gamingHub', 'blockchainBasics', finalChallengePoints);
+            }
+            
+            console.log(`🏁 Quest "${activeQuest.title}" completed! Final challenge: ${correctInFinalChallenge}/${totalQuestionsInFinalChallenge} correct = ${finalChallengePoints} points awarded.`);
+          }
+          
+          // Mark both the final challenge and quest as completed
           setUserProgress(prev => ({
             ...prev,
-            completedNodes: [...prev.completedNodes, finalChallengeKey]
+            completedNodes: [...prev.completedNodes, finalChallengeKey, questCompletionKey]
           }));
-
-          // Award points for completing the final challenge (only once per quest)
-          if (addPoints) {
-            const questCompletionKey = `${activeQuest.id}-quest-completed`;
-            const hasBeenCompleted = userProgress.completedNodes.includes(questCompletionKey);
-            
-            if (!hasBeenCompleted) {
-              const finalChallengePoints = 50; // Higher points for quest completion
-              switch (activeQuest.id) {
-                case 'blockchain-basics':
-                  addPoints('gamingHub', 'blockchainBasics', finalChallengePoints);
-                  break;
-                case 'crypto-security':
-                  addPoints('gamingHub', 'smartContracts', finalChallengePoints);
-                  break;
-                case 'defi-explorer':
-                  addPoints('gamingHub', 'defiProtocols', finalChallengePoints);
-                  break;
-                case 'nft-creator':
-                  addPoints('gamingHub', 'nftsWeb3', finalChallengePoints);
-                  break;
-                default:
-                  addPoints('gamingHub', 'blockchainBasics', finalChallengePoints);
-              }
-              
-              // Mark this quest as completed
-              setUserProgress(prev => ({
-                ...prev,
-                completedNodes: [...prev.completedNodes, questCompletionKey]
-              }));
-              
-              console.log(`🏁 Quest "${activeQuest.title}" completed for first time! Awarded ${finalChallengePoints} points.`);
-            } else {
-              console.log(`⚠️ Quest "${activeQuest.title}" already completed - no additional points awarded.`);
-            }
-          }
+        } else {
+          console.log(`⚠️ Quest "${activeQuest.title}" already completed - no additional points awarded.`);
         }
       }
       
@@ -1316,6 +1332,24 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
   const xpForNextLevel = playerLevel * 100;
   const xpProgress = (playerXP % 100);
 
+  // Calculate actual gaming hub points for display (should match migrate points)
+  const calculateGamingHubPoints = () => {
+    try {
+      const savedPoints = sessionStorage.getItem('ccube_user_points');
+      if (savedPoints) {
+        const pointsData = JSON.parse(savedPoints);
+        if (pointsData.gamingHub) {
+          return Object.values(pointsData.gamingHub).reduce((sum, val) => sum + val, 0);
+        }
+      }
+    } catch (e) {
+      console.error('Error reading gaming hub points:', e);
+    }
+    return 0;
+  };
+
+  const totalGamingHubPoints = calculateGamingHubPoints();
+
   return (
     <GameContainer>
       {feedback && (
@@ -1330,8 +1364,8 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
             <StatLabel>Level</StatLabel>
           </StatItem>
           <StatItem>
-            <StatValue>{playerXP}</StatValue>
-            <StatLabel>Total XP</StatLabel>
+            <StatValue>{totalGamingHubPoints}</StatValue>
+            <StatLabel>Total Points</StatLabel>
             <XPBar>
               <XPFill percentage={xpProgress} />
             </XPBar>
@@ -1371,14 +1405,6 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
                   </span>
                 )}
               </QuestTitle>
-              <QuestReward>
-                {quest.locked ? '???' : 'up to 50 XP'}
-                {!quest.locked && (
-                  <InfoIcon data-tooltip="Bonus XP = (Correct Answers ÷ Total Questions) × 50">
-                    i
-                  </InfoIcon>
-                )}
-              </QuestReward>
             </QuestHeader>
             
             <QuestDescription>

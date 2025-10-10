@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import GamifiedLearningHub from './GamifiedLearningHub';
-import ARVRInterface from './ARVRInterface';
 import InteractiveDashboard from './InteractiveDashboard';
 import StoryModeLearning from './StoryModeLearning';
-import HandsOnPlayground from './HandsOnPlayground';
 import EnhancedChatInterface from './EnhancedChatInterface';
 import WalletSetupPrompt from './WalletSetupPrompt';
 import MigratePointDashboard from './MigratePointDashboard';
@@ -297,16 +295,14 @@ const SelectorButton = styled.button`
       { id: 'enhanced-chat', name: 'Assistant', component: EnhancedChatInterface },
       { id: 'gamified-hub', name: 'Gaming Hub', component: GamifiedLearningHub },
       { id: 'story-mode', name: 'Story Mode', component: StoryModeLearning },
-      { id: 'dashboard', name: 'Dashboard', component: InteractiveDashboard },
-      { id: 'playground', name: 'Playground', component: HandsOnPlayground },
-      { id: 'ar-vr', name: 'AR/VR Style', component: ARVRInterface }
+      { id: 'dashboard', name: 'Dashboard', component: InteractiveDashboard }
     ];
 
     // Conditionally add migrate points interface only when wallet is connected
     return walletConnected ? [
       ...baseInterfaces.slice(0, 3), // Assistant, Gaming Hub, Story Mode
       { id: 'migrate-points', name: 'Migrate Points', component: MigratePointDashboard },
-      ...baseInterfaces.slice(3) // Dashboard, Playground, AR/VR Style
+      ...baseInterfaces.slice(3) // Dashboard
     ] : baseInterfaces;
   }, [walletConnected]);
 
@@ -478,13 +474,82 @@ const SelectorButton = styled.button`
       }
     }));
     
-    // Clear all progress data from sessionStorage
+    // Clear points and game progress but preserve story position
     sessionStorage.removeItem('ccube_user_points');
     sessionStorage.removeItem('ccube_game_progress');
-    sessionStorage.removeItem('ccube_story_progress');
+    // DON'T clear story progress - user should retain their chapter/question position
     
     console.log('✅ All points and progress cleared');
   };
+
+  // Complete application reset on new browser session
+  useEffect(() => {
+    const sessionActive = sessionStorage.getItem('ccube_session_active');
+    
+    if (!sessionActive) {
+      // New browser session detected - clear ALL application data
+      console.log('🆕 New browser session detected - performing complete application reset');
+      
+      // Clear all sessionStorage data
+      sessionStorage.clear();
+      
+      // Reset userProgress state to initial values
+      setUserProgress({
+        completedNodes: [],
+        points: {
+          total: 0,
+          gamingHub: {
+            blockchainBasics: 0,
+            smartContracts: 0,
+            defiProtocols: 0,
+            nftsWeb3: 0
+          },
+          storyMode: {
+            chapter1: 0,
+            chapter2: 0,
+            chapter3: 0,
+            chapter4: 0,
+            chapter5: 0,
+            chapter6: 0,
+            chapter7: 0,
+            chapter8: 0
+          },
+          achievements: 0
+        }
+      });
+      
+      console.log('✅ Complete application reset completed - fresh start');
+    } else {
+      console.log('🔄 Continuing existing browser session');
+    }
+    
+    // Mark this session as active
+    sessionStorage.setItem('ccube_session_active', 'true');
+  }, []); // Empty dependency array - runs only on component mount
+
+  // Clear all data on browser close
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      console.log('🚪 Browser closing - clearing all application data');
+      // Clear all sessionStorage data completely
+      sessionStorage.clear();
+    };
+    
+    // Also handle page visibility changes for mobile browsers
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        console.log('📱 Page hidden - preparing for potential session end');
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   // Check for existing wallet and points on component mount
   useEffect(() => {
@@ -621,6 +686,7 @@ const SelectorButton = styled.button`
           walletData={walletData}
           addPoints={addPoints}
           resetPoints={resetPoints}
+          onWalletSetupRequest={() => setShowWalletSetup(true)}
         />
       </ContentWrapper>
 

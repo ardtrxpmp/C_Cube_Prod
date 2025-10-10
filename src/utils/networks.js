@@ -1,49 +1,13 @@
-// Definition of supported blockchain networks
-const networks = [
-  {
-    id: 'multi-chain',
-    name: 'Multi-Chain',
-    chainId: 0,
-    symbol: 'MULTI',
-    rpcUrl: '',
-    blockExplorer: '',
-    color: '#00CC33',
-    description: 'View all multi-chain wallets',
-    isTestnet: false,
-    isMultiChainView: true
-  },
+// Network configurations for cold wallet functionality
+const networksData = [
   {
     id: 'ethereum',
-    name: 'Ethereum',
+    name: 'Ethereum Mainnet',
     chainId: 1,
     symbol: 'ETH',
-    rpcUrl: 'https://ethereum.publicnode.com',
-    blockExplorer: 'https://etherscan.io',
-    color: '#627EEA',
-    description: 'Ethereum Mainnet',
-    isTestnet: false
-  },
-  {
-    id: 'bsc',
-    name: 'Binance Smart Chain',
-    chainId: 56,
-    symbol: 'BNB',
-    rpcUrl: 'https://bsc.publicnode.com',
-    blockExplorer: 'https://bscscan.com',
-    color: '#F0B90B',
-    description: 'Binance Smart Chain Mainnet',
-    isTestnet: false
-  },
-  {
-    id: 'base',
-    name: 'Base',
-    chainId: 8453,
-    symbol: 'ETH',
-    rpcUrl: 'https://mainnet.base.org',
-    blockExplorer: 'https://basescan.org',
-    color: '#0052FF',
-    description: 'Base Mainnet (Coinbase L2)',
-    isTestnet: false
+    rpcUrl: 'https://cloudflare-eth.com',
+    explorerUrl: 'https://etherscan.io',
+    color: '#627EEA'
   },
   {
     id: 'polygon',
@@ -51,21 +15,26 @@ const networks = [
     chainId: 137,
     symbol: 'MATIC',
     rpcUrl: 'https://polygon-rpc.com',
-    blockExplorer: 'https://polygonscan.com',
-    color: '#8247E5',
-    description: 'Polygon Mainnet',
-    isTestnet: false
+    explorerUrl: 'https://polygonscan.com',
+    color: '#8247E5'
+  },
+  {
+    id: 'bsc',
+    name: 'BSC Mainnet',
+    chainId: 56,
+    symbol: 'BNB',
+    rpcUrl: 'https://bsc-dataseed.binance.org',
+    explorerUrl: 'https://bscscan.com',
+    color: '#F3BA2F'
   },
   {
     id: 'arbitrum',
-    name: 'Arbitrum',
+    name: 'Arbitrum One',
     chainId: 42161,
     symbol: 'ETH',
     rpcUrl: 'https://arb1.arbitrum.io/rpc',
-    blockExplorer: 'https://arbiscan.io',
-    color: '#2D374B',
-    description: 'Arbitrum One',
-    isTestnet: false
+    explorerUrl: 'https://arbiscan.io',
+    color: '#28A0F0'
   },
   {
     id: 'optimism',
@@ -73,30 +42,23 @@ const networks = [
     chainId: 10,
     symbol: 'ETH',
     rpcUrl: 'https://mainnet.optimism.io',
-    blockExplorer: 'https://optimistic.etherscan.io',
-    color: '#FF0420',
-    description: 'Optimism Mainnet',
-    isTestnet: false
-  },
-  {
-    id: 'avalanche',
-    name: 'Avalanche',
-    chainId: 43114,
-    symbol: 'AVAX',
-    rpcUrl: 'https://api.avax.network/ext/bc/C/rpc',
-    blockExplorer: 'https://snowtrace.io',
-    color: '#E84142',
-    description: 'Avalanche C-Chain',
-    isTestnet: false
+    explorerUrl: 'https://optimistic.etherscan.io',
+    color: '#FF0420'
   }
 ];
 
+export const networks = networksData;
+
 export const getNetworkById = (id) => {
-  return networks.find(network => network.id === id) || networks[0];
+  return networks.find(network => network.id === id);
 };
 
 export const getNetworkByChainId = (chainId) => {
-  return networks.find(network => network.chainId === chainId) || networks[0];
+  return networks.find(network => network.chainId === chainId);
+};
+
+export const getNetworkByName = (name) => {
+  return networks.find(network => network.name.toLowerCase().includes(name.toLowerCase()));
 };
 
 export default networks;
