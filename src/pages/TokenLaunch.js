@@ -1,8 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { Link } from 'react-router-dom';
+import { ethers } from 'ethers';
 import CCubeLogo from '../components/CyFoCubeLogo';
 import WalletSetupPrompt from '../components/LearnAI/WalletSetupPrompt';
+
+// Utility function to format supply numbers
+const formatSupply = (supply) => {
+  if (!supply) return '0';
+  const num = parseInt(supply);
+  if (num >= 1000000000) return `${(num / 1000000000).toFixed(1).replace('.0', '')}B`;
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1).replace('.0', '')}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1).replace('.0', '')}K`;
+  return num.toString();
+};
 
 // Animations
 const fadeIn = keyframes`
@@ -86,6 +97,119 @@ const SimpleLogo = styled.div`
   svg {
     z-index: 10;
     transform: scale(0.7);
+  }
+`;
+
+// Network Toggle Components
+const NetworkToggleButton = styled.button`
+  background: linear-gradient(135deg, #2c2c2c, #1a1a1a);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  height: 32px;
+  position: absolute;
+  right: ${props => props.rightOffset || 280}px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    background: linear-gradient(135deg, #3c3c3c, #2a2a2a);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+const NetworkToggleIcon = styled.span`
+  font-size: 0.8rem;
+  transition: transform 0.2s ease;
+  ${props => props.isMainnet && 'animation: pulse 2s infinite;'}
+`;
+
+// Wallet Modal Components
+const WalletModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  backdrop-filter: blur(5px);
+`;
+
+const WalletModal = styled.div`
+  background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+  border: 1px solid rgba(0, 204, 51, 0.3);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+`;
+
+const WalletModalTitle = styled.h2`
+  color: #00cc33;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+`;
+
+const WalletOption = styled.button`
+  width: 100%;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  
+  &:hover {
+    background: linear-gradient(135deg, #3a3a3a, #2f2f2f);
+    border-color: rgba(0, 204, 51, 0.5);
+    transform: translateY(-1px);
+  }
+`;
+
+const WalletIcon = styled.span`
+  font-size: 1.5rem;
+`;
+
+const CloseModalButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 1.5rem;
+  cursor: pointer;
+  
+  &:hover {
+    color: #fff;
   }
 `;
 
@@ -411,6 +535,30 @@ const Input = styled.input`
   }
 `;
 
+const TextArea = styled.textarea`
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding: 1rem;
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  border-radius: 4px;
+  background: rgba(20, 20, 20, 0.8);
+  color: #00cc33;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  resize: vertical;
+  min-height: 100px;
+  
+  &:focus {
+    outline: none;
+    border-color: #00ff41;
+    box-shadow: 0 0 0 2px rgba(0, 204, 51, 0.2);
+    background: rgba(20, 20, 20, 0.9);
+  }
+  
+  &::placeholder {
+    color: rgba(78, 154, 6, 0.7);
+  }
+`;
+
 const FileInput = styled.input`
   display: none;
 `;
@@ -663,6 +811,8 @@ const TokenRowsSubContainer = styled.div`
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.3);
   margin-top: 0.5rem;
+  margin-right: 20px;
+  margin-left: 20px;
   
   /* Hide scrollbars */
   &::-webkit-scrollbar {
@@ -680,21 +830,21 @@ const TokenRowsContent = styled.div`
 
 const TableHeader = styled.div`
   display: grid;
-  grid-template-columns: 60px 1.3fr 1.7fr 80px;
+  grid-template-columns: 60px 1.3fr 100px 1.7fr 80px;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
   background: rgba(0, 204, 51, 0.1);
   border-radius: 8px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 600;
-  color: #00cc33;
+  font-weight: 400;
+  color: #ccc;
   font-size: 0.9rem;
   flex-shrink: 0; /* Keep header fixed */
 `;
 
 const TokenRow = styled.div`
   display: grid;
-  grid-template-columns: 60px 1.3fr 1.7fr 80px;
+  grid-template-columns: 60px 1.3fr 100px 1.7fr 80px;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
@@ -829,6 +979,29 @@ const ContractAddress = styled.div`
   font-family: 'Share Tech Mono', monospace;
   color: ${props => props.color || '#4e9a06'};
   font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+`;
+
+const CopyButton = styled.button`
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 2px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: #00cc33;
+    background: rgba(0, 204, 51, 0.1);
+  }
+  
+  &:active {
+    color: #00ff41;
+  }
 `;
 
 const SocialIcons = styled.div`
@@ -856,14 +1029,31 @@ const SocialIcon = styled.div`
   }
 `;
 
-const DescriptionCell = styled.div`
+const SupplyCell = styled.div`
   display: flex;
   align-items: center;
+  justify-content: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #00cc33;
+  text-shadow: 0 0 5px rgba(0, 204, 51, 0.3);
+  white-space: nowrap;
+`;
+
+const DescriptionCell = styled.div`
+  display: flex;
+  align-items: flex-start;
   justify-content: flex-start;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: white;
-  font-size: 0.75rem;
-  line-height: 1.2;
+  font-size: 0.65rem;
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
 `;
 
 const DaysCell = styled.div`
@@ -881,6 +1071,7 @@ const TokenLaunch = ({ onNavigate }) => {
     tokenName: '',
     tokenSymbol: '',
     initialSupply: '',
+    description: '',
     walletAddress: '',
     tokenImage: null,
     twitter: '',
@@ -897,6 +1088,21 @@ const TokenLaunch = ({ onNavigate }) => {
   const [walletData, setWalletData] = useState(null);
   const [showWalletSetup, setShowWalletSetup] = useState(false);
   const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
+  
+  // External wallet integration
+  const [externalWalletConnected, setExternalWalletConnected] = useState(false);
+  const [externalWalletData, setExternalWalletData] = useState(null);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [gasPrice, setGasPrice] = useState(null);
+  const [launchedTokens, setLaunchedTokens] = useState([]);
+  const [loadingTokens, setLoadingTokens] = useState(true);
+  
+  // Network selection state
+  const [isMainnet, setIsMainnet] = useState(false); // false = testnet, true = mainnet
+  
+  // Dynamic positioning for toggle button
+  const walletButtonRef = useRef(null);
+  const [walletButtonWidth, setWalletButtonWidth] = useState(280); // default fallback
 
   // Sample token data with colorful images
   const sampleTokens = [
@@ -1052,18 +1258,25 @@ const TokenLaunch = ({ onNavigate }) => {
     }
   ];
 
-  const getSocialIcon = (type) => {
+  const getSocialIcon = (type, token, index) => {
     const socialData = {
-      'T': { color: '#1DA1F2', symbol: '𝕏' }, // Twitter/X
-      'W': { color: '#00cc33', symbol: '🌐' }, // Website
-      'D': { color: '#5865F2', symbol: '🎮' }, // Discord (gaming controller)
-      'G': { color: '#24292e', symbol: '</>' }, // GitHub (code brackets)
-      'TG': { color: '#29B6F6', symbol: '▶' } // Telegram (arrow pointing right like paper plane)
+      'T': { color: '#1DA1F2', symbol: '𝕏', url: token?.socialLinks?.twitter }, // Twitter/X
+      'W': { color: '#00cc33', symbol: '🌐', url: token?.socialLinks?.website }, // Website
+      'D': { color: '#5865F2', symbol: '🎮', url: null }, // Discord (not in database)
+      'G': { color: '#29B6F6', symbol: '▶', url: token?.socialLinks?.telegram }, // Telegram (using G for telegram)
+      'TG': { color: '#29B6F6', symbol: '▶', url: token?.socialLinks?.telegram } // Telegram alternative
     };
     
-    const social = socialData[type] || { color: '#4e9a06', symbol: '?' };
+    const social = socialData[type] || { color: '#4e9a06', symbol: '?', url: null };
+    
     return (
-      <SocialIcon key={type} color={social.color} title={getSocialName(type)}>
+      <SocialIcon 
+        key={index || type} 
+        color={social.color} 
+        title={getSocialName(type)}
+        onClick={() => social.url && window.open(social.url, '_blank')}
+        style={{ cursor: social.url ? 'pointer' : 'default' }}
+      >
         {social.symbol}
       </SocialIcon>
     );
@@ -1088,6 +1301,20 @@ const TokenLaunch = ({ onNavigate }) => {
     }));
   };
 
+  // Helper function to convert file to base64
+  const convertFileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        // Remove the data:image/...;base64, prefix to get just the base64 string
+        const base64String = reader.result.split(',')[1];
+        resolve(base64String);
+      };
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -1106,6 +1333,11 @@ const TokenLaunch = ({ onNavigate }) => {
 
   const validateForm = () => {
     const { tokenName, tokenSymbol, initialSupply, walletAddress } = formData;
+    
+    // Check if wallet is connected
+    if (!walletConnected && !externalWalletConnected) {
+      return 'Please connect a wallet to deploy your token';
+    }
     
     if (!tokenName || !tokenSymbol || !initialSupply || !walletAddress) {
       return 'Please fill in all required fields';
@@ -1136,33 +1368,98 @@ const TokenLaunch = ({ onNavigate }) => {
     setResult(null);
 
     try {
+      // Determine which wallet to use
+      let deploymentWallet = null;
+      if (walletConnected && walletData) {
+        deploymentWallet = {
+          type: 'ccube',
+          data: walletData
+        };
+      } else if (externalWalletConnected && externalWalletData) {
+        deploymentWallet = {
+          type: 'external',
+          data: externalWalletData
+        };
+      } else {
+        setResult({
+          success: false,
+          message: 'Please connect a wallet before launching your token'
+        });
+        setLoading(false);
+        return;
+      }
+
+      console.log('Sending deployment request:', {
+        tokenName: formData.tokenName,
+        tokenSymbol: formData.tokenSymbol,
+        initialSupply: formData.initialSupply,
+        walletAddress: formData.walletAddress,
+        isMainnet,
+        wallet: deploymentWallet
+      });
+
+      // Prepare form data for API - convert image to base64 if present
+      let apiFormData = { ...formData };
+      
+      if (formData.tokenImage && formData.tokenImage instanceof File) {
+        try {
+          const base64Image = await convertFileToBase64(formData.tokenImage);
+          apiFormData.tokenImage = base64Image;
+        } catch (imageError) {
+          console.error('Error converting image to base64:', imageError);
+          // Continue without image if conversion fails
+          apiFormData.tokenImage = null;
+        }
+      }
+
       // Call the deployment API
       const response = await fetch('/api/deploy-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...apiFormData,
+          isMainnet: isMainnet,
+          wallet: deploymentWallet
+        }),
       });
 
-      const data = await response.json();
+      console.log('Response status:', response.status);
+      console.log('Response headers:', [...response.headers.entries()]);
 
-      if (response.ok) {
-        setResult({
-          success: true,
-          message: 'Token launched successfully!',
-          contractAddress: data.contractAddress,
-          transactionHash: data.transactionHash,
-          explorerUrl: data.explorerUrl,
-          deploymentInfo: data.deploymentInfo
-        });
-      } else {
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log('Error response:', errorText);
+        
+        let errorMessage = 'Failed to launch token';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          errorMessage = `Server error (${response.status}): ${errorText}`;
+        }
+        
         setResult({
           success: false,
-          message: data.error || 'Failed to launch token'
+          message: errorMessage
         });
+        return;
       }
+
+      const data = await response.json();
+      console.log('Success response:', data);
+
+      setResult({
+        success: true,
+        message: 'Token launched successfully!',
+        contractAddress: data.contractAddress,
+        transactionHash: data.transactionHash,
+        explorerUrl: data.explorerUrl,
+        deploymentInfo: data.deploymentInfo
+      });
     } catch (error) {
+      console.error('Network error:', error);
       setResult({
         success: false,
         message: 'Network error: ' + error.message
@@ -1175,25 +1472,55 @@ const TokenLaunch = ({ onNavigate }) => {
   // Wallet connection handlers
   const handleWalletClick = () => {
     if (walletConnected) {
-      // If connected, show confirmation before removing wallet
-      setShowRemoveConfirmation(true);
+      // C-Cube wallet connected - show confirmation dialog
+      handleCCubeWalletDisconnect();
+    } else if (externalWalletConnected) {
+      // External wallet connected - disconnect immediately
+      handleExternalWalletDisconnect();
     } else {
-      // If not connected, show wallet setup UI
-      setShowWalletSetup(true);
+      // Not connected - show wallet selection modal
+      setShowWalletModal(true);
     }
   };
 
   const handleWalletDisconnect = () => {
-    // Completely remove wallet - clear all data and states
+    // This function is used by the confirmation dialog for C-Cube wallet
     setWalletConnected(false);
     setWalletData(null);
+    setExternalWalletConnected(false);
+    setExternalWalletData(null);
     setShowRemoveConfirmation(false);
+    
+    // Clear wallet address from form
+    setFormData(prev => ({
+      ...prev,
+      walletAddress: ''
+    }));
     
     // Remove wallet data from localStorage
     localStorage.removeItem('ccube_token_wallet');
     localStorage.removeItem('ccube_token_wallet_connected');
     
-    console.log('C-Cube Wallet disconnected from Token Launch');
+    console.log('All wallets disconnected.');
+  };
+
+  const handleExternalWalletDisconnect = () => {
+    // Direct disconnect for external wallets (MetaMask/Trust Wallet)
+    setExternalWalletConnected(false);
+    setExternalWalletData(null);
+    
+    // Clear wallet address from form
+    setFormData(prev => ({
+      ...prev,
+      walletAddress: ''
+    }));
+    
+    console.log('External wallet disconnected.');
+  };
+
+  const handleCCubeWalletDisconnect = () => {
+    // Show confirmation dialog for C-Cube wallet
+    setShowRemoveConfirmation(true);
   };
 
   const handleCancelRemove = () => {
@@ -1205,6 +1532,12 @@ const TokenLaunch = ({ onNavigate }) => {
     setWalletConnected(true);
     setShowWalletSetup(false);
     
+    // Auto-populate wallet address in form
+    setFormData(prev => ({
+      ...prev,
+      walletAddress: newWalletData.address
+    }));
+    
     // Save to localStorage for persistence
     localStorage.setItem('ccube_token_wallet', JSON.stringify(newWalletData));
     localStorage.setItem('ccube_token_wallet_connected', 'true');
@@ -1213,6 +1546,249 @@ const TokenLaunch = ({ onNavigate }) => {
   const handleCloseWalletSetup = () => {
     setShowWalletSetup(false);
   };
+
+  // External Wallet Functions
+  const connectMetaMask = async () => {
+    try {
+      if (typeof window.ethereum !== 'undefined') {
+        // First disconnect any existing connections to force fresh connection
+        try {
+          await window.ethereum.request({
+            method: 'wallet_requestPermissions',
+            params: [{ eth_accounts: {} }]
+          });
+        } catch (permissionError) {
+          // If permission request fails, try direct account request
+          console.log('Permission request failed, trying direct connection:', permissionError);
+        }
+        
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        
+        // Request accounts - this should always show the MetaMask popup
+        const accounts = await window.ethereum.request({ 
+          method: 'eth_requestAccounts' 
+        });
+        
+        if (!accounts || accounts.length === 0) {
+          throw new Error('No accounts found. Please make sure MetaMask is unlocked.');
+        }
+        
+        const signer = await provider.getSigner();
+        const address = await signer.getAddress();
+        const balance = await provider.getBalance(address);
+        
+        const walletData = {
+          address,
+          balance: ethers.formatEther(balance),
+          provider: 'MetaMask'
+        };
+        
+        setExternalWalletData(walletData);
+        setExternalWalletConnected(true);
+        setShowWalletModal(false);
+        
+        // Auto-populate wallet address in form
+        setFormData(prev => ({
+          ...prev,
+          walletAddress: address
+        }));
+      } else {
+        alert('MetaMask is not installed. Please install MetaMask to continue.');
+      }
+    } catch (error) {
+      console.error('Error connecting to MetaMask:', error);
+      
+      // More specific error messages
+      if (error.code === 4001) {
+        alert('MetaMask connection was rejected by user.');
+      } else if (error.code === -32002) {
+        alert('MetaMask connection request is already pending. Please check MetaMask.');
+      } else {
+        alert('Failed to connect to MetaMask: ' + (error.message || 'Unknown error'));
+      }
+    }
+  };
+
+  const connectTrustWallet = async () => {
+    try {
+      if (typeof window.ethereum !== 'undefined' && window.ethereum.isTrust) {
+        // First request permissions to force fresh connection
+        try {
+          await window.ethereum.request({
+            method: 'wallet_requestPermissions',
+            params: [{ eth_accounts: {} }]
+          });
+        } catch (permissionError) {
+          // If permission request fails, try direct account request
+          console.log('Permission request failed, trying direct connection:', permissionError);
+        }
+        
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        
+        // Request accounts - this should always show the Trust Wallet popup
+        const accounts = await window.ethereum.request({ 
+          method: 'eth_requestAccounts' 
+        });
+        
+        if (!accounts || accounts.length === 0) {
+          throw new Error('No accounts found. Please make sure Trust Wallet is unlocked.');
+        }
+        
+        const signer = await provider.getSigner();
+        const address = await signer.getAddress();
+        const balance = await provider.getBalance(address);
+        
+        const walletData = {
+          address,
+          balance: ethers.formatEther(balance),
+          provider: 'Trust Wallet'
+        };
+        
+        setExternalWalletData(walletData);
+        setExternalWalletConnected(true);
+        setShowWalletModal(false);
+        
+        // Auto-populate wallet address in form
+        setFormData(prev => ({
+          ...prev,
+          walletAddress: address
+        }));
+      } else {
+        alert('Trust Wallet is not available. Please use Trust Wallet browser or install the extension.');
+      }
+    } catch (error) {
+      console.error('Error connecting to Trust Wallet:', error);
+      
+      // More specific error messages
+      if (error.code === 4001) {
+        alert('Trust Wallet connection was rejected by user.');
+      } else if (error.code === -32002) {
+        alert('Trust Wallet connection request is already pending. Please check Trust Wallet.');
+      } else {
+        alert('Failed to connect to Trust Wallet: ' + (error.message || 'Unknown error'));
+      }
+    }
+  };
+
+  const disconnectExternalWallet = () => {
+    setExternalWalletConnected(false);
+    setExternalWalletData(null);
+  };
+
+  // Database Integration Functions
+  const fetchLaunchedTokens = async () => {
+    try {
+      setLoadingTokens(true);
+      const response = await fetch('/api/tokens/launched');
+      if (response.ok) {
+        const tokens = await response.json();
+        console.log('Fetched tokens from API:', tokens.length, tokens);
+        setLaunchedTokens(tokens);
+      } else {
+        console.error('Failed to fetch launched tokens');
+        // Fallback to sample data if API fails
+        setLaunchedTokens(sampleTokens);
+      }
+    } catch (error) {
+      console.error('Error fetching launched tokens:', error);
+      // Fallback to sample data if API fails
+      setLaunchedTokens(sampleTokens);
+    } finally {
+      setLoadingTokens(false);
+    }
+  };
+
+  const fetchGasPrice = async () => {
+    try {
+      const chainId = isMainnet ? 56 : 97; // BSC Mainnet : BSC Testnet
+      const rpcUrl = isMainnet 
+        ? 'https://bsc-dataseed.binance.org/'
+        : 'https://data-seed-prebsc-1-s1.binance.org:8545/';
+      
+      const provider = new ethers.JsonRpcProvider(rpcUrl);
+      const feeData = await provider.getFeeData();
+      setGasPrice(ethers.formatUnits(feeData.gasPrice, 'gwei'));
+    } catch (error) {
+      console.error('Error fetching gas price:', error);
+    }
+  };
+
+  // Copy functionality
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // Could add toast notification here
+      console.log('Copied to clipboard:', text);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  };
+
+  // useEffect to load wallet data from localStorage on component mount
+  useEffect(() => {
+    const savedWalletData = localStorage.getItem('ccube_token_wallet');
+    const savedWalletConnected = localStorage.getItem('ccube_token_wallet_connected');
+    
+    if (savedWalletData && savedWalletConnected === 'true') {
+      try {
+        const parsedWalletData = JSON.parse(savedWalletData);
+        setWalletData(parsedWalletData);
+        setWalletConnected(true);
+        
+        // Auto-populate wallet address in form
+        setFormData(prev => ({
+          ...prev,
+          walletAddress: parsedWalletData.address
+        }));
+      } catch (error) {
+        console.error('Error parsing saved wallet data:', error);
+        // Clear invalid data
+        localStorage.removeItem('ccube_token_wallet');
+        localStorage.removeItem('ccube_token_wallet_connected');
+      }
+    }
+  }, []);
+
+  // useEffect to measure wallet button width and adjust toggle button position
+  useEffect(() => {
+    const measureWalletButton = () => {
+      if (walletButtonRef.current) {
+        const rect = walletButtonRef.current.getBoundingClientRect();
+        setWalletButtonWidth(rect.width + 70); // Add 70px gap (20px + 50px extra)
+      }
+    };
+
+    // Measure immediately
+    measureWalletButton();
+
+    // Measure again after a short delay to ensure content is rendered
+    const timeoutId = setTimeout(measureWalletButton, 100);
+
+    // Add resize listener to handle window resizing
+    window.addEventListener('resize', measureWalletButton);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', measureWalletButton);
+    };
+  }, [walletConnected, externalWalletConnected, walletData, externalWalletData]); // Re-measure when wallet state changes
+
+  // useEffect hooks for data fetching
+  useEffect(() => {
+    fetchLaunchedTokens();
+    fetchGasPrice();
+    
+    // Refresh gas price every 30 seconds
+    const gasInterval = setInterval(fetchGasPrice, 30000);
+    
+    // Refresh tokens every 2 minutes
+    const tokensInterval = setInterval(fetchLaunchedTokens, 120000);
+    
+    return () => {
+      clearInterval(gasInterval);
+      clearInterval(tokensInterval);
+    };
+  }, [isMainnet]);
 
   // Show wallet setup prompt when requested
   if (showWalletSetup) {
@@ -1234,27 +1810,90 @@ const TokenLaunch = ({ onNavigate }) => {
               <CCubeLogo />
             </Link>
           </SimpleLogo>
-          <CCubeWalletButton connected={walletConnected} onClick={handleWalletClick}>
+          
+          <NetworkToggleButton 
+            isMainnet={isMainnet} 
+            onClick={() => setIsMainnet(!isMainnet)}
+            title={`Switch to ${isMainnet ? 'Testnet' : 'Mainnet'}`}
+            rightOffset={walletButtonWidth}
+          >
+            <NetworkToggleIcon isMainnet={isMainnet}>
+              {isMainnet ? '🔴' : '🟡'}
+            </NetworkToggleIcon>
+            {isMainnet ? 'Mainnet' : 'Testnet'}
+          </NetworkToggleButton>
+          
+          <CCubeWalletButton 
+            ref={walletButtonRef}
+            connected={walletConnected || externalWalletConnected} 
+            onClick={handleWalletClick}
+          >
             {walletConnected ? (
               <span style={{ fontWeight: 'bold' }}>
-                🗑️ Disconnect{' '}
+                🗑️ Disconnect C-Cube{' '}
                 {walletData && walletData.address && (
                   <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>
                     ({walletData.address.slice(0, 4)}...{walletData.address.slice(-3)})
                   </span>
                 )}
               </span>
-            ) : <span style={{ fontWeight: 'bold' }}>💳 Connect C-Cube Wallet</span>}
+            ) : externalWalletConnected ? (
+              <span style={{ fontWeight: 'bold' }}>
+                �️ Disconnect {externalWalletData?.provider}{' '}
+                {externalWalletData && externalWalletData.address && (
+                  <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>
+                    ({externalWalletData.address.slice(0, 4)}...{externalWalletData.address.slice(-3)})
+                  </span>
+                )}
+              </span>
+            ) : <span style={{ fontWeight: 'bold' }}>💳 Connect Wallet</span>}
           </CCubeWalletButton>
         </SimpleHeaderContent>
       </SimpleHeader>
+      
+      {/* Wallet Selection Modal */}
+      {showWalletModal && (
+        <WalletModalOverlay onClick={() => setShowWalletModal(false)}>
+          <WalletModal onClick={(e) => e.stopPropagation()}>
+            <CloseModalButton onClick={() => setShowWalletModal(false)}>×</CloseModalButton>
+            <WalletModalTitle>Connect Wallet</WalletModalTitle>
+            
+            <WalletOption onClick={() => {
+              setShowWalletModal(false);
+              setShowWalletSetup(true);
+            }}>
+              <WalletIcon>🔷</WalletIcon>
+              <div>
+                <div style={{ fontWeight: 'bold' }}>C-Cube Wallet</div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>Create or import C-Cube wallet</div>
+              </div>
+            </WalletOption>
+            
+            <WalletOption onClick={connectMetaMask}>
+              <WalletIcon>🦊</WalletIcon>
+              <div>
+                <div style={{ fontWeight: 'bold' }}>MetaMask</div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>Connect using MetaMask extension</div>
+              </div>
+            </WalletOption>
+            
+            <WalletOption onClick={connectTrustWallet}>
+              <WalletIcon>🛡️</WalletIcon>
+              <div>
+                <div style={{ fontWeight: 'bold' }}>Trust Wallet</div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>Connect using Trust Wallet</div>
+              </div>
+            </WalletOption>
+          </WalletModal>
+        </WalletModalOverlay>
+      )}
       
       <LaunchContainer>
       <FormContainer>
         <FormHeader>
           <FormTitle>Launch Your Token</FormTitle>
           <FormSubtitle>
-            Create and deploy your  BSC token in minutes. Fill in your token details below and launch to the blockchain.
+            Create and deploy your BSC token in minutes. Fill in your token details below and launch to the blockchain.
           </FormSubtitle>
         </FormHeader>
 
@@ -1323,6 +1962,19 @@ const TokenLaunch = ({ onNavigate }) => {
               />
             </FormGroup>
           </FormRow>
+
+          <FormRow>
+            <FormGroup>
+              <Label>Token Description</Label>
+              <TextArea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="Describe your token's purpose, utility, and unique features..."
+                rows="4"
+              />
+            </FormGroup>
+          </FormRow>
         </FormSection>
 
         <FormSection>
@@ -1371,15 +2023,103 @@ const TokenLaunch = ({ onNavigate }) => {
           
           <FormRow>
             <FormGroup>
-              <Label>Owner Wallet Address *</Label>
-              <Input
-                type="text"
-                name="walletAddress"
-                value={formData.walletAddress}
-                onChange={handleInputChange}
-                placeholder="0x..."
-                required
-              />
+              <Label>Connected Wallet *</Label>
+              {walletConnected ? (
+                <div style={{
+                  padding: '12px 16px',
+                  border: '2px solid #00cc33',
+                  borderRadius: '8px',
+                  background: 'rgba(0, 204, 51, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  fontFamily: 'Share Tech Mono, monospace',
+                  color: '#00ff41'
+                }}>
+                  <span>
+                    ✅ C-Cube Wallet Connected
+                    <br />
+                    <span style={{ fontSize: '0.85rem', opacity: 0.9 }}>
+                      {walletData?.address}
+                    </span>
+                  </span>
+                  <button
+                    onClick={handleCCubeWalletDisconnect}
+                    style={{
+                      background: 'rgba(255, 69, 58, 0.2)',
+                      border: '1px solid #ff453a',
+                      borderRadius: '4px',
+                      color: '#ff453a',
+                      padding: '6px 12px',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem'
+                    }}
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              ) : externalWalletConnected ? (
+                <div style={{
+                  padding: '12px 16px',
+                  border: '2px solid #00cc33',
+                  borderRadius: '8px',
+                  background: 'rgba(0, 204, 51, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  fontFamily: 'Share Tech Mono, monospace',
+                  color: '#00ff41'
+                }}>
+                  <span>
+                    ✅ {externalWalletData?.provider} Connected
+                    <br />
+                    <span style={{ fontSize: '0.85rem', opacity: 0.9 }}>
+                      {externalWalletData?.address}
+                    </span>
+                  </span>
+                  <button
+                    onClick={handleExternalWalletDisconnect}
+                    style={{
+                      background: 'rgba(255, 69, 58, 0.2)',
+                      border: '1px solid #ff453a',
+                      borderRadius: '4px',
+                      color: '#ff453a',
+                      padding: '6px 12px',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem'
+                    }}
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowWalletModal(true)}
+                  style={{
+                    width: '100%',
+                    background: 'linear-gradient(135deg, #00cc33, #2ecc40)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: 'white',
+                    padding: '16px 24px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    fontSize: '1rem',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 4px 15px rgba(0, 204, 51, 0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 20px rgba(0, 204, 51, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 15px rgba(0, 204, 51, 0.3)';
+                  }}
+                >
+                  💳 Connect Wallet
+                </button>
+              )}
             </FormGroup>
           </FormRow>
         </FormSection>
@@ -1426,7 +2166,16 @@ const TokenLaunch = ({ onNavigate }) => {
                 
                 <DetailRow>
                   <DetailLabel>Contract Address:</DetailLabel>
-                  <DetailValue>{result.contractAddress}</DetailValue>
+                  <DetailValue>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {result.contractAddress}
+                      <CopyButton onClick={() => copyToClipboard(result.contractAddress)} title="Copy address">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                        </svg>
+                      </CopyButton>
+                    </div>
+                  </DetailValue>
                 </DetailRow>
                 
                 <DetailRow>
@@ -1468,18 +2217,34 @@ const TokenLaunch = ({ onNavigate }) => {
         <ListTitle>🏆 Launched Tokens</ListTitle>
         
         <TokenTable>
-          <div style={{padding: '0 1.5rem'}}>
-            <TableHeader>
-              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Rank</div>
-              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start'}}>Token Info</div>
-              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start'}}>Description</div>
-              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Days</div>
-            </TableHeader>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '60px 1.3fr 100px 1.7fr 80px',
+            gap: '0.75rem',
+            padding: '0.5rem 2.25rem',
+            marginRight: '20px',
+            marginLeft: '20px',
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+            fontWeight: 400,
+            color: '#ccc',
+            fontSize: '0.9rem'
+          }}>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Rank</div>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start'}}>Token Info</div>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Supply</div>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginLeft: '4px'}}>Description</div>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Days</div>
           </div>
           
           <TokenRowsSubContainer>
             <TokenRowsContent>
-              {sampleTokens.map((token) => (
+            {loadingTokens ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
+                Loading launched tokens...
+              </div>
+            ) : launchedTokens.length > 0 ? (
+              launchedTokens.map((token) => (
             <TokenRow key={token.rank}>
               <RankCell rank={token.rank}>#{token.rank}</RankCell>
               
@@ -1488,23 +2253,47 @@ const TokenLaunch = ({ onNavigate }) => {
                   src={token.image}
                   bgColor={token.bgColor}
                   borderColor={token.bgColor}
+                  onError={(e) => {
+                    console.log('Image failed to load:', token.image);
+                    e.target.style.backgroundImage = 'none';
+                  }}
                 >
-                  {!token.image && token.symbol[0]}
+                  {!token.image && token.symbol && token.symbol[0]}
                 </TokenImage>
                 <TokenInfo>
-                  <TokenSymbol color="white">${token.symbol}</TokenSymbol>
-                  <ContractAddress color="#00ff41">{token.contractAddress}</ContractAddress>
+                  <TokenSymbol color="white">{token.symbol}</TokenSymbol>
+                  <ContractAddress color="#00ff41">
+                    {token.contractAddress ? 
+                      `${token.contractAddress.slice(0, 6)}...${token.contractAddress.slice(-4)}` : 
+                      'N/A'
+                    }
+                    <CopyButton onClick={() => copyToClipboard(token.contractAddress)} title="Copy full address">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                      </svg>
+                    </CopyButton>
+                  </ContractAddress>
                   <SocialIcons>
-                    {token.socials.map(social => getSocialIcon(social))}
+                    {token.socials && token.socials.map((social, index) => 
+                      getSocialIcon(social, token, index)
+                    )}
                   </SocialIcons>
                 </TokenInfo>
               </InfoCell>
+              
+              <SupplyCell>{formatSupply(token.initialSupply)}</SupplyCell>
               
               <DescriptionCell>{token.description}</DescriptionCell>
               
               <DaysCell>{token.daysCreated}d</DaysCell>
             </TokenRow>
-              ))}
+              ))
+            ) : (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>📭</div>
+                No tokens launched yet
+              </div>
+            )}
             </TokenRowsContent>
           </TokenRowsSubContainer>
         </TokenTable>

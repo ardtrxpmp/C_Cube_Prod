@@ -1,0 +1,18 @@
+{
+  "contractAddress": "0xE64BAa41B4cF7e2bFcC58dF751303407268EDfc7",
+  "transactionHash": "0xa45b71461275f7f935d8e08e420d5a447a7b6cfa50865cdd912f081215633105",
+  "tokenName": "asds",
+  "tokenSymbol": "asd",
+  "decimals": 18,
+  "initialSupply": "110000",
+  "ownerAddress": "0xdd385Af0c7b57AB5aFb3cb9106d20BF01eEc4fDd",
+  "network": "BSC Testnet",
+  "chainId": 97,
+  "deployedAt": "2025-10-11T13:31:05.350Z",
+  "explorerUrl": "https://testnet.bscscan.com/address/0xE64BAa41B4cF7e2bFcC58dF751303407268EDfc7",
+  "description": "Eight arms of opportunity in the DeFi ocean. This cyber octopus can multitask across multiple blockchain networks simultaneously, maximizing yield and minimizing risk.",
+  "website": "ad",
+  "twitter": "qwe",
+  "telegram": "asd",
+  "tokenImage": {}
+}

@@ -1,0 +1,13 @@
+{
+  "contractAddress": "0xA6d0bF20D50e275Ea865f2AD02E47F31B0c993E6",
+  "transactionHash": "0x2f5fcf109d18746bcd33d09b698cce84cad3fe7e4e7711ce8cfc5ac2a5d1705c",
+  "tokenName": "NB0g",
+  "tokenSymbol": "NB0g",
+  "decimals": 18,
+  "initialSupply": "10001",
+  "ownerAddress": "0x26A0B7DDEE98549d4BE703711c3ed131fb0aCDCb",
+  "network": "BSC Testnet",
+  "chainId": 97,
+  "deployedAt": "2025-10-11T13:10:44.658Z",
+  "explorerUrl": "https://testnet.bscscan.com/address/0xA6d0bF20D50e275Ea865f2AD02E47F31B0c993E6"
+}
