@@ -19,7 +19,9 @@ async function saveTokenToGitHub(tokenData) {
     try {
         // Create filename based on contract address (lowercase, no 0x prefix)
         const contractAddress = tokenData.contractAddress.toLowerCase().replace('0x', '');
-        const FILE_PATH = `tokens/${contractAddress}.json`;
+        // Route to correct folder based on network
+        const tokensFolder = tokenData.isMainnet ? 'Token_mainnet' : 'tokens';
+        const FILE_PATH = `${tokensFolder}/${contractAddress}.json`;
 
         console.log(`Saving token data to: ${FILE_PATH}`);
 
@@ -55,12 +57,14 @@ async function saveTokenToGitHub(tokenData) {
         // Add image metadata if image exists
         if (tokenData.tokenImage) {
             const imageFileName = `${contractAddress}.png`;
-            const imageUrl = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/images/${imageFileName}`;
+            // Route to correct image folder based on network
+            const imagesFolder = tokenData.isMainnet ? 'Image_mainnet' : 'images';
+            const imageUrl = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${imagesFolder}/${imageFileName}`;
             
             completeTokenData.image = {
                 fileName: imageFileName,
                 url: imageUrl,
-                githubPath: `images/${imageFileName}`,
+                githubPath: `${imagesFolder}/${imageFileName}`,
                 contractAddress: tokenData.contractAddress,
                 uploadedAt: new Date().toISOString()
             };
@@ -115,7 +119,7 @@ async function saveTokenToGitHub(tokenData) {
         if (tokenData.tokenImage) {
             console.log('Image data received:', typeof tokenData.tokenImage, tokenData.tokenImage ? tokenData.tokenImage.length : 'null');
             try {
-                await saveTokenImageToGitHub(tokenData.tokenImage, contractAddress);
+                await saveTokenImageToGitHub(tokenData.tokenImage, contractAddress, tokenData.isMainnet);
                 console.log('Token image saved to GitHub successfully');
             } catch (imageError) {
                 console.error('Failed to save image, but token data was saved:', imageError);
@@ -140,11 +144,13 @@ async function saveTokenToGitHub(tokenData) {
 }
 
 // Save token image to GitHub
-async function saveTokenImageToGitHub(imageData, contractAddress) {
+async function saveTokenImageToGitHub(imageData, contractAddress, isMainnet = false) {
     const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
     const REPO_OWNER = 'cyfocube';
     const REPO_NAME = 'C_DataBase';
-    const IMAGE_PATH = `images/${contractAddress}.png`;
+    // Route to correct image folder based on network
+    const imagesFolder = isMainnet ? 'Image_mainnet' : 'images';
+    const IMAGE_PATH = `${imagesFolder}/${contractAddress}.png`;
 
     try {
         // Handle both base64 string and buffer input
@@ -232,7 +238,8 @@ async function compileContract() {
 // Deploy token function
 async function deployToken(req, res) {
     try {
-        console.log('🚀 Starting token deployment...');
+        console.log('🚀 Starting token deployment API...');
+        console.log('📡 Received request body:', JSON.stringify(req.body, null, 2));
         
         // Get data from request body
         const { 
@@ -245,22 +252,96 @@ async function deployToken(req, res) {
             website = '',
             twitter = '',
             telegram = '',
-            tokenImage = null
+            tokenImage = null,
+            contractAddress: providedContractAddress = null,
+            transactionHash: providedTransactionHash = null,
+            explorerUrl: providedExplorerUrl = null,
+            deploymentInfo: providedDeploymentInfo = null
         } = req.body;
         
-        // Validate required fields
-        if (!tokenName || !tokenSymbol || !initialSupply || !walletAddress) {
+        console.log('📋 Extracted parameters:', {
+            tokenName,
+            tokenSymbol,
+            initialSupply,
+            walletAddress,
+            isMainnet
+        });
+        
+        // Validate required fields (walletAddress is optional for server-side deployment)
+        if (!tokenName || !tokenSymbol || !initialSupply) {
             return res.status(400).json({
-                error: 'Missing required fields: tokenName, tokenSymbol, initialSupply, walletAddress'
+                error: 'Missing required fields: tokenName, tokenSymbol, initialSupply'
             });
         }
         
-        // Validate wallet address
-        if (!ethers.isAddress(walletAddress)) {
+        // Handle server-side deployment vs client-provided wallet
+        let actualWalletAddress = walletAddress;
+        let isServerSideDeployment = false;
+        
+        if (walletAddress === 'server-side-deployment') {
+            console.log('🔧 Server-side deployment detected');
+            isServerSideDeployment = true;
             return res.status(400).json({
-                error: 'Invalid wallet address format'
+                error: 'Server-side deployment requires a valid wallet address to send tokens to'
+            });
+        } else if (!walletAddress || walletAddress === '') {
+            console.log('🔧 No wallet address provided');
+            return res.status(400).json({
+                error: 'Wallet address is required for token deployment'
+            });
+        } else {
+            // Validate client-provided wallet address
+            if (!ethers.isAddress(walletAddress)) {
+                return res.status(400).json({
+                    error: 'Invalid wallet address format'
+                });
+            }
+            console.log('🔧 Server-side deployment: Server pays gas, tokens go to connected wallet');
+            isServerSideDeployment = true;
+            actualWalletAddress = walletAddress;
+        }
+
+        // Check if token is already deployed (wallet-deployed token)
+        if (providedContractAddress && providedTransactionHash && providedDeploymentInfo) {
+            console.log('🎯 Token already deployed by wallet, saving data...');
+            
+            // Use provided deployment data
+            const tokenData = {
+                tokenName,
+                tokenSymbol,
+                initialSupply,
+                walletAddress,
+                contractAddress: providedContractAddress,
+                transactionHash: providedTransactionHash,
+                explorerUrl: providedExplorerUrl,
+                deploymentInfo: providedDeploymentInfo,
+                description,
+                website,
+                twitter,
+                telegram,
+                tokenImage,
+                isMainnet,
+                network: isMainnet ? 'BSC Mainnet' : 'BSC Testnet',
+                chainId: isMainnet ? 56 : 97,
+                deployedAt: new Date().toISOString(),
+                ownerAddress: walletAddress
+            };
+
+            // Save to GitHub database
+            await saveTokenToGitHub(tokenData);
+            
+            // Return success response
+            return res.json({
+                success: true,
+                contractAddress: providedContractAddress,
+                transactionHash: providedTransactionHash,
+                explorerUrl: providedExplorerUrl,
+                deploymentInfo: providedDeploymentInfo
             });
         }
+        
+        // Server-side deployment (fallback)
+        console.log('🔧 Starting server-side deployment...');
         
         // Get private key from environment
         const privateKey = process.env.PRIVATE_KEY;
@@ -284,7 +365,9 @@ async function deployToken(req, res) {
         const provider = new ethers.JsonRpcProvider(RPC_URL);
         const wallet = new ethers.Wallet(privateKey, provider);
         
-        console.log(`💰 Deploying from wallet: ${wallet.address}`);
+        // Server wallet pays for gas, but tokens go to the connected wallet
+        console.log(`� Deploying from server wallet: ${wallet.address}`);
+        console.log(`🎯 Tokens will go to connected wallet: ${actualWalletAddress}`);
         
         // Check balance
         const balance = await provider.getBalance(wallet.address);
@@ -307,7 +390,7 @@ async function deployToken(req, res) {
             symbol: tokenSymbol,
             decimals,
             supply: initialSupply,
-            owner: walletAddress
+            owner: actualWalletAddress
         });
         
         // Create contract factory
@@ -319,7 +402,7 @@ async function deployToken(req, res) {
             tokenSymbol,
             decimals,
             initialSupply,
-            walletAddress
+            actualWalletAddress
         );
         
         const gasEstimate = await provider.estimateGas(deployTx);
@@ -334,7 +417,7 @@ async function deployToken(req, res) {
             tokenSymbol,
             decimals,
             initialSupply,
-            walletAddress,
+            actualWalletAddress,
             {
                 gasLimit: gasEstimate * 120n / 100n, // Add 20% buffer
                 gasPrice: gasPrice.gasPrice
@@ -360,7 +443,7 @@ async function deployToken(req, res) {
             tokenSymbol,
             decimals,
             initialSupply,
-            ownerAddress: walletAddress,
+            ownerAddress: actualWalletAddress,
             network: networkName,
             chainId: chainId,
             deployedAt: new Date().toISOString(),
