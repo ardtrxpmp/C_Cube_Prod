@@ -1448,7 +1448,7 @@ const DescriptionCell = styled.div`
   text-overflow: ellipsis;
 `;
 
-const DaysCell = styled.div`
+const TimeCell = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5107,27 +5107,6 @@ DO NOT attempt further mainnet deployments until testnet testing is successful.`
           </FormRow>
         </FormSection>
 
-        {/* Server-side deployment notice */}
-        <div style={{
-          backgroundColor: '#e8f5e8',
-          border: '1px solid #4caf50',
-          borderRadius: '8px',
-          padding: '16px',
-          margin: '20px 0',
-          fontSize: '14px',
-          color: '#2e7d32'
-        }}>
-          <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
-            🔒 Secure Server-Side Deployment
-          </div>
-          <div>
-            • No wallet connection required<br/>
-            • Uses secure private key from server environment<br/>
-            • Proven reliable deployment method<br/>
-            • Automatically deploys to BSC network
-          </div>
-        </div>
-
         <ButtonContainer>
           <LaunchButton
             onClick={handleLaunch}
@@ -5304,7 +5283,7 @@ DO NOT attempt further mainnet deployments until testnet testing is successful.`
                 opacity: 0.6
               }}></div>
             </div>
-            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Days</div>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Time</div>
           </div>
           
           <TokenRowsSubContainer>
@@ -5365,7 +5344,7 @@ DO NOT attempt further mainnet deployments until testnet testing is successful.`
               
               <DescriptionCell>{token.description}</DescriptionCell>
               
-              <DaysCell>{token.daysCreated}d</DaysCell>
+              <TimeCell>{token.timeCreated || `${token.daysCreated}d`}</TimeCell>
             </TokenRow>
               ))
             ) : searchFilter ? (

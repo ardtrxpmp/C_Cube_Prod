@@ -11,7 +11,11 @@ async function handler(req, res) {
     const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
     const REPO_OWNER = 'cyfocube';
     const REPO_NAME = 'C_DataBase';
-    const TOKENS_FOLDER = 'tokens';
+    
+    // Get network parameter from query string (default to testnet)
+    const isMainnet = req.query.isMainnet === 'true';
+    const TOKENS_FOLDER = isMainnet ? 'Token_mainnet' : 'tokens';
+    const IMAGES_FOLDER = isMainnet ? 'Image_mainnet' : 'images';
 
     if (!GITHUB_TOKEN) {
       console.error('GitHub token not configured');
@@ -60,12 +64,19 @@ async function handler(req, res) {
         if (fileResponse.ok) {
           const tokenData = await fileResponse.json();
           
-                    // Add image URL if it exists
+          // Debug logging for deployedAt field
+          console.log(`Token ${tokenData.tokenSymbol || tokenData.symbol} deployedAt fields:`, {
+            topLevel: tokenData.deployedAt,
+            deploymentInfo: tokenData.deploymentInfo ? tokenData.deploymentInfo.deployedAt : 'no deploymentInfo',
+            createdAt: tokenData.createdAt
+          });
+          
+          // Add image URL if it exists
           const contractAddress = tokenData.contractAddress || tokenData.address;
           if (contractAddress) {
             // Convert to lowercase and remove 0x prefix to match image file naming
             const imageFileName = contractAddress.toLowerCase().replace('0x', '');
-            tokenData.image = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/images/${imageFileName}.png`;
+            tokenData.image = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${IMAGES_FOLDER}/${imageFileName}.png`;
             console.log(`Added image URL for ${tokenData.tokenSymbol || tokenData.symbol}: ${tokenData.image}`);
           }
           
@@ -108,9 +119,53 @@ async function handler(req, res) {
           website: token.website,
           telegram: token.telegram
         },
-        daysCreated: token.createdAt || token.deployedAt ? 
-          Math.floor((Date.now() - new Date(token.createdAt || token.deployedAt).getTime()) / (1000 * 60 * 60 * 24)) :
-          0
+        timeCreated: (() => {
+          const deployedAt = token.createdAt || token.deployedAt || (token.deploymentInfo && token.deploymentInfo.deployedAt);
+          if (deployedAt) {
+            const now = Date.now();
+            const deploymentTime = new Date(deployedAt).getTime();
+            const timeDiff = now - deploymentTime;
+            
+            // Calculate different time units
+            const seconds = Math.floor(timeDiff / 1000);
+            const minutes = Math.floor(timeDiff / (1000 * 60));
+            const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const weeks = Math.floor(timeDiff / (1000 * 60 * 60 * 24 * 7));
+            const months = Math.floor(timeDiff / (1000 * 60 * 60 * 24 * 30));
+            const years = Math.floor(timeDiff / (1000 * 60 * 60 * 24 * 365));
+            
+            let timeDisplay = '0sec';
+            
+            if (years > 0) {
+              timeDisplay = years === 1 ? '1yr' : `${years}yrs`;
+            } else if (months > 0) {
+              timeDisplay = months === 1 ? '1mo' : `${months}mos`;
+            } else if (weeks > 0) {
+              timeDisplay = weeks === 1 ? '1wk' : `${weeks}wks`;
+            } else if (days > 0) {
+              timeDisplay = days === 1 ? '1d' : `${days}d`;
+            } else if (hours > 0) {
+              timeDisplay = hours === 1 ? '1hr' : `${hours}hrs`;
+            } else if (minutes > 0) {
+              timeDisplay = minutes === 1 ? '1min' : `${minutes}mins`;
+            } else if (seconds > 0) {
+              timeDisplay = seconds === 1 ? '1sec' : `${seconds}secs`;
+            }
+            
+            console.log(`Calculated ${timeDisplay} for token ${token.tokenSymbol || token.symbol} (deployedAt: ${deployedAt})`);
+            return timeDisplay;
+          }
+          return '0sec';
+        })(),
+        // Keep daysCreated for backward compatibility but use timeCreated for display
+        daysCreated: (() => {
+          const deployedAt = token.createdAt || token.deployedAt || (token.deploymentInfo && token.deploymentInfo.deployedAt);
+          if (deployedAt) {
+            return Math.floor((Date.now() - new Date(deployedAt).getTime()) / (1000 * 60 * 60 * 24));
+          }
+          return 0;
+        })()
       };
     });
 
