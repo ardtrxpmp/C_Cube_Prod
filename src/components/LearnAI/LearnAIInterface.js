@@ -6,6 +6,7 @@ import StoryModeLearning from './StoryModeLearning';
 import EnhancedChatInterface from './EnhancedChatInterface';
 import WalletSetupPrompt from './WalletSetupPrompt';
 import MigratePointDashboard from './MigratePointDashboard';
+import { useWallet } from '../../context/WalletContext';
 
 const LearnAIContainer = styled.div`
   width: 100%;
@@ -18,7 +19,7 @@ const LearnAIContainer = styled.div`
 
 const HeaderContainer = styled.div`
   position: absolute;
-  top: 20px;
+  top: 120px;
   left: 20px;
   right: 20px;
   z-index: 1000;
@@ -224,12 +225,13 @@ const CancelButton = styled.button`
 
 const ContentWrapper = styled.div`
   position: absolute;
-  top: 100px;
+  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   overflow-y: auto;
   z-index: 1;
+  padding-top: 110px; /* Moved up another 10px - fine-tuned positioning */
 `;
 
 const SelectorButton = styled.button`
@@ -254,12 +256,20 @@ const SelectorButton = styled.button`
   }
 `;
 
-  const LearnAIInterface = () => {
-  const [activeInterface, setActiveInterface] = useState('enhanced-chat');
+  const LearnAIInterface = ({ activeInterface = 'enhanced-chat' }) => {
+  // Use global wallet context
+  const {
+    cCubeWalletConnected,
+    cCubeWalletData,
+    externalWalletConnected,
+    externalWalletData,
+    connectCCubeWallet,
+    disconnectCCubeWallet,
+    isAnyWalletConnected,
+    getWalletDisplayName
+  } = useWallet();
   const [walletSetup, setWalletSetup] = useState(false);
-  const [walletData, setWalletData] = useState(null);
   const [showWalletSetup, setShowWalletSetup] = useState(false);
-  const [walletConnected, setWalletConnected] = useState(false);
   const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
   const [userProgress, setUserProgress] = useState({
     completedNodes: [],
@@ -288,26 +298,20 @@ const SelectorButton = styled.button`
     }
   });
 
-  // Base interfaces that are always available
-  // Memoize interfaces to prevent unnecessary recreations
-  const interfaces = useMemo(() => {
-    const baseInterfaces = [
-      { id: 'enhanced-chat', name: 'Assistant', component: EnhancedChatInterface },
-      { id: 'gamified-hub', name: 'Gaming Hub', component: GamifiedLearningHub },
-      { id: 'story-mode', name: 'Story Mode', component: StoryModeLearning },
-      { id: 'dashboard', name: 'Dashboard', component: InteractiveDashboard }
-    ];
-
-    // Conditionally add migrate points interface only when wallet is connected
-    return walletConnected ? [
-      ...baseInterfaces.slice(0, 3), // Assistant, Gaming Hub, Story Mode
-      { id: 'migrate-points', name: 'Migrate Points', component: MigratePointDashboard },
-      ...baseInterfaces.slice(3) // Dashboard
-    ] : baseInterfaces;
-  }, [walletConnected]);
+  // Component mapping for different interfaces
+  const getComponent = (interfaceId) => {
+    const componentMap = {
+      'enhanced-chat': EnhancedChatInterface,
+      'gamified-hub': GamifiedLearningHub,
+      'story-mode': StoryModeLearning,
+      'dashboard': InteractiveDashboard,
+      'migrate-points': MigratePointDashboard
+    };
+    return componentMap[interfaceId] || EnhancedChatInterface;
+  };
 
   const handleWalletClick = () => {
-    if (walletConnected) {
+    if (cCubeWalletConnected) {
       // If connected, show confirmation before removing wallet
       setShowRemoveConfirmation(true);
     } else {
@@ -317,21 +321,20 @@ const SelectorButton = styled.button`
     }
   };
 
-  const handleWalletDisconnect = () => {
+  const handleWalletDisconnect = async () => {
     // If user is currently viewing migrate-points, switch to assistant interface
     if (activeInterface === 'migrate-points') {
       setActiveInterface('enhanced-chat');
     }
     
-    // Completely remove wallet - clear all data and states
-    setWalletConnected(false);
-    setWalletSetup(false);
-    setWalletData(null);
-    setShowRemoveConfirmation(false);
-    
-    // Remove all wallet data from localStorage
-    localStorage.removeItem('ccube_ai_wallet');
-    localStorage.removeItem('ccube_ai_wallet_connected');
+    // Use global wallet context to disconnect
+    try {
+      await disconnectCCubeWallet();
+      setWalletSetup(false);
+      setShowRemoveConfirmation(false);
+    } catch (error) {
+      console.error('Error disconnecting wallet:', error);
+    }
     
     console.log('C-Cube Wallet completely removed from AI Tutor');
   };
@@ -340,13 +343,17 @@ const SelectorButton = styled.button`
     setShowRemoveConfirmation(false);
   };
 
-  const handleWalletSetup = (newWalletData) => {
-    setWalletData(newWalletData);
-    setWalletSetup(true);
-    setWalletConnected(true); // Auto-connect after setup
-    setShowWalletSetup(false); // Hide wallet setup after completion
-    // Optionally save to localStorage for persistence
-    localStorage.setItem('ccube_ai_wallet', JSON.stringify(newWalletData));
+  const handleWalletSetup = async (newWalletData) => {
+    try {
+      // Use global wallet context to connect C-Cube wallet
+      await connectCCubeWallet(newWalletData);
+      setWalletSetup(true);
+      setShowWalletSetup(false); // Hide wallet setup after completion
+      
+      console.log('C-Cube wallet connected through global context in AI Tutor');
+    } catch (error) {
+      console.error('Error connecting C-Cube wallet:', error);
+    }
   };
 
   const handleCloseWalletSetup = () => {
@@ -551,28 +558,17 @@ const SelectorButton = styled.button`
     };
   }, []);
 
-  // Check for existing wallet and points on component mount
+  // Set wallet setup state based on global wallet connection
   useEffect(() => {
-    const savedWallet = localStorage.getItem('ccube_ai_wallet');
-    const savedConnectionState = localStorage.getItem('ccube_ai_wallet_connected');
-    
-    if (savedWallet) {
-      try {
-        const walletInfo = JSON.parse(savedWallet);
-        setWalletData(walletInfo);
-        setWalletSetup(true);
-        
-        // Restore connection state (default to true if wallet exists)
-        const isConnected = savedConnectionState ? JSON.parse(savedConnectionState) : false;
-        setWalletConnected(isConnected);
-      } catch (err) {
-        console.error('Error loading saved wallet:', err);
-        localStorage.removeItem('ccube_ai_wallet');
-        localStorage.removeItem('ccube_ai_wallet_connected');
-      }
+    if (cCubeWalletConnected) {
+      setWalletSetup(true);
+    } else {
+      setWalletSetup(false);
     }
+  }, [cCubeWalletConnected]);
 
-    // Load points from sessionStorage
+  // Load points from sessionStorage on component mount
+  useEffect(() => {
     console.log('LearnAIInterface mounting - checking sessionStorage for points...');
     const savedPoints = sessionStorage.getItem('ccube_user_points');
     console.log('Raw saved points from sessionStorage:', savedPoints);
@@ -615,18 +611,10 @@ const SelectorButton = styled.button`
     }
   }, []);
 
-  // Save connection state to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('ccube_ai_wallet_connected', JSON.stringify(walletConnected));
-  }, [walletConnected]);
+  // Wallet connection state is now managed by global context
 
-  const getCurrentInterface = () => {
-    const selectedInterface = interfaces.find(i => i.id === activeInterface);
-    console.log('Switching to interface:', activeInterface, 'with userProgress:', userProgress);
-    return selectedInterface ? selectedInterface.component : EnhancedChatInterface;
-  };
-
-  const CurrentComponent = getCurrentInterface();
+  const CurrentComponent = getComponent(activeInterface);
+  console.log('Switching to interface:', activeInterface, 'with userProgress:', userProgress);
   
   // Show wallet setup prompt only if explicitly requested (not on first load)
   if (showWalletSetup) {
@@ -634,56 +622,18 @@ const SelectorButton = styled.button`
       <WalletSetupPrompt 
         onWalletSetup={handleWalletSetup}
         onClose={handleCloseWalletSetup}
-        existingWallet={walletSetup ? walletData : null}
+        existingWallet={cCubeWalletConnected ? cCubeWalletData : null}
       />
     );
   }
 
   return (
     <LearnAIContainer>
-      <HeaderContainer>
-        <LeftSection>
-          <CCubeWalletButton connected={walletConnected} onClick={handleWalletClick}>
-            {walletConnected ? '�️ Remove C-Cube Wallet' : '💳 Connect C-Cube Wallet'}
-          </CCubeWalletButton>
-          <InterfaceTitle>
-            🧠 Learn AI - Blockchain Fundamentals
-            {walletConnected && walletData && (
-              <span style={{ 
-                fontSize: '0.7rem', 
-                color: '#10b981', 
-                marginLeft: '8px',
-                opacity: 0.8 
-              }}>
-                • Wallet Connected ({walletData.address ? `${walletData.address.slice(0, 6)}...${walletData.address.slice(-4)}` : 'Ready'})
-              </span>
-            )}
-          </InterfaceTitle>
-        </LeftSection>
-        
-        <InterfaceSelector>
-          <SelectorTitle>Choose Learning Interface:</SelectorTitle>
-          <ButtonGrid>
-            {interfaces.map(interfaceItem => (
-              <SelectorButton
-                key={interfaceItem.id}
-                active={activeInterface === interfaceItem.id}
-                onClick={() => setActiveInterface(interfaceItem.id)}
-              >
-                {interfaceItem.name}
-              </SelectorButton>
-            ))}
-          </ButtonGrid>
-        </InterfaceSelector>
-      </HeaderContainer>
-
-      <DecorativeLine />
-
       <ContentWrapper>
         <CurrentComponent 
           userProgress={userProgress}
           setUserProgress={setUserProgress}
-          walletData={walletData}
+          walletData={cCubeWalletData}
           addPoints={addPoints}
           resetPoints={resetPoints}
           onWalletSetupRequest={() => setShowWalletSetup(true)}

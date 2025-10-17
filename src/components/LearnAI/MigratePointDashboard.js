@@ -18,7 +18,7 @@ const MigrateContainer = styled.div`
   background: linear-gradient(135deg, #0f0f23, #1a1a2e);
   position: relative;
   overflow: auto;
-  padding: 40px 20px 20px;
+  padding: 55px 20px 20px; /* Increased top padding by 15px */
 `;
 
 const DashboardHeader = styled.div`

@@ -6,6 +6,139 @@ import CCubeLogo from '../components/CyFoCubeLogo';
 import WalletSetupPrompt from '../components/LearnAI/WalletSetupPrompt';
 import { useWallet } from '../context/WalletContext';
 
+// Contract Source Code for BSCScan Verification
+const CONTRACT_SOURCE_CODE = `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+interface IERC20 {
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address recipient, uint256 amount) external returns (bool);
+    function allowance(address owner, address spender) external view returns (uint256);
+    function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+contract CustomToken is IERC20 {
+    string public name;
+    string public symbol;
+    uint8 public decimals;
+    uint256 private _totalSupply;
+    
+    mapping(address => uint256) private _balances;
+    mapping(address => mapping(address => uint256)) private _allowances;
+    
+    address public owner;
+    
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not the owner");
+        _;
+    }
+    
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        uint8 _decimals,
+        uint256 _initialSupply,
+        address _owner
+    ) {
+        name = _name;
+        symbol = _symbol;
+        decimals = _decimals;
+        _totalSupply = _initialSupply * 10**_decimals;
+        _balances[_owner] = _totalSupply;
+        owner = _owner;
+        
+        emit Transfer(address(0), _owner, _totalSupply);
+        emit OwnershipTransferred(address(0), _owner);
+    }
+    
+    function totalSupply() public view override returns (uint256) {
+        return _totalSupply;
+    }
+    
+    function balanceOf(address account) public view override returns (uint256) {
+        return _balances[account];
+    }
+    
+    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+        _transfer(msg.sender, recipient, amount);
+        return true;
+    }
+    
+    function allowance(address owner, address spender) public view virtual override returns (uint256) {
+        return _allowances[owner][spender];
+    }
+    
+    function approve(address spender, uint256 amount) public virtual override returns (bool) {
+        _approve(msg.sender, spender, amount);
+        return true;
+    }
+    
+    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
+        uint256 currentAllowance = _allowances[sender][msg.sender];
+        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
+        
+        _transfer(sender, recipient, amount);
+        _approve(sender, msg.sender, currentAllowance - amount);
+        
+        return true;
+    }
+    
+    function _transfer(address sender, address recipient, uint256 amount) internal {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        
+        uint256 senderBalance = _balances[sender];
+        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
+        
+        _balances[sender] = senderBalance - amount;
+        _balances[recipient] += amount;
+        
+        emit Transfer(sender, recipient, amount);
+    }
+    
+    function _approve(address owner, address spender, uint256 amount) internal {
+        require(owner != address(0), "ERC20: approve from the zero address");
+        require(spender != address(0), "ERC20: approve to the zero address");
+        
+        _allowances[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
+    }
+    
+    // Optional: Mint function (only owner)
+    function mint(address to, uint256 amount) public onlyOwner {
+        require(to != address(0), "ERC20: mint to the zero address");
+        
+        _totalSupply += amount;
+        _balances[to] += amount;
+        
+        emit Transfer(address(0), to, amount);
+    }
+    
+    // Optional: Burn function
+    function burn(uint256 amount) public {
+        require(_balances[msg.sender] >= amount, "ERC20: burn amount exceeds balance");
+        
+        _balances[msg.sender] -= amount;
+        _totalSupply -= amount;
+        
+        emit Transfer(msg.sender, address(0), amount);
+    }
+    
+    // Transfer ownership
+    function transferOwnership(address newOwner) public onlyOwner {
+        require(newOwner != address(0), "New owner is the zero address");
+        emit OwnershipTransferred(owner, newOwner);
+        owner = newOwner;
+    }
+}`;
+
 // ERC-20 Token Contract ABI and Bytecode
 const TOKEN_CONTRACT_ABI = [
   {
@@ -919,7 +1052,15 @@ const ImagePreview = styled.div`
 const ButtonContainer = styled.div`
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 1rem;
   margin-top: 2rem;
+  flex-wrap: wrap;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+  }
 `;
 
 const LaunchButton = styled.button`
@@ -1055,12 +1196,12 @@ const DetailRow = styled.div`
 const DetailLabel = styled.span`
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 500;
-  color: #4e9a06;
+  color: #b0b0b0;
 `;
 
 const DetailValue = styled.span`
   font-family: 'Share Tech Mono', 'Courier New', monospace;
-  color: #00cc33;
+  color: #e0e0e0;
   word-break: break-all;
 `;
 
@@ -1396,6 +1537,211 @@ const CopyButton = styled.button`
   }
 `;
 
+const PancakeSwapButton = styled.button`
+  background: linear-gradient(135deg, #FF8C94, #FF6B9D);
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  margin-top: 12px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  
+  &:hover {
+    background: linear-gradient(135deg, #FF6B9D, #FF8C94);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+const RenounceButton = styled.button`
+  background: linear-gradient(135deg, #FF6B42, #FF8442);
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  margin-top: 12px;
+  margin-left: 12px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  
+  &:hover {
+    background: linear-gradient(135deg, #FF8442, #FF6B42);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 132, 66, 0.3);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+const ButtonsContainer = styled.div`
+  display: flex;
+  gap: 0;
+  margin-top: 12px;
+`;
+
+const SourceCodeSection = styled.div`
+  margin-top: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid #3a3a5c;
+  border-radius: 12px;
+`;
+
+const SourceCodeTitle = styled.h4`
+  color: #ffffff;
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  font-weight: 600;
+`;
+
+const SourceCodeTextarea = styled.textarea`
+  width: 100%;
+  height: 200px;
+  background: #0f0f23;
+  border: 1px solid #3a3a5c;
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 0.8rem;
+  padding: 12px;
+  resize: vertical;
+  line-height: 1.4;
+  
+  &:focus {
+    outline: none;
+    border-color: #6c5ce7;
+  }
+`;
+
+const VerificationSteps = styled.div`
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(108, 92, 231, 0.1);
+  border: 1px solid rgba(108, 92, 231, 0.3);
+  border-radius: 8px;
+`;
+
+const StepsList = styled.ol`
+  margin: 10px 0 0 0;
+  padding-left: 20px;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+`;
+
+const VerificationInfo = styled.p`
+  color: #b0b0b0;
+  font-size: 0.85rem;
+  margin: 8px 0 0 0;
+`;
+
+const CopySourceButton = styled.button`
+  background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+  }
+`;
+
+const RenounceInstructions = styled.div`
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 8px;
+`;
+
+const DirectRenounceButton = styled.button`
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 15px;
+  width: 100%;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+const ErrorDisplay = styled.div`
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 8px;
+  color: #ffb3b3;
+`;
+
+const ErrorTitle = styled.h4`
+  color: #ff6b6b;
+  margin: 0 0 10px 0;
+  font-size: 0.95rem;
+`;
+
+const ErrorDetails = styled.pre`
+  background: #0f0f23;
+  border: 1px solid #3a3a5c;
+  border-radius: 6px;
+  padding: 12px;
+  color: #e0e0e0;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 10px 0;
+`;
+
+const CopyErrorButton = styled.button`
+  background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-top: 8px;
+`;
+
 const SocialIcons = styled.div`
   display: flex;
   gap: 0.25rem;
@@ -1474,6 +1820,8 @@ const TokenLaunch = ({ onNavigate }) => {
   const [imagePreview, setImagePreview] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [renounceError, setRenounceError] = useState(null);
+  const [skipValidation, setSkipValidation] = useState(false);
   
   // Use global wallet context
   const {
@@ -2091,89 +2439,134 @@ const TokenLaunch = ({ onNavigate }) => {
     }
   };
 
-  const deployTokenWithWallet = async () => {
+  const handleWalletLaunchOLD = async () => {
     try {
-      // Get the connected wallet provider with enhanced error handling
-      let provider;
-      let signer;
-      let walletAddress; // Initialize walletAddress variable
+      // Import the simplified token factory
+      const { deploySimpleToken, switchToBSC } = await import('../utils/SimpleTokenFactory');
+      
+      console.log('🚀 Starting simplified wallet deployment...');
+      
+      // Check if wallet is connected
+      if (!window.ethereum) {
+        throw new Error('No wallet found. Please install MetaMask or another wallet extension.');
+      }
 
-      console.log('🔍 Wallet Connection Analysis:');
-      console.log('- window.ethereum available:', !!window.ethereum);
-      console.log('- External wallet connected:', externalWalletConnected);
-      console.log('- C-Cube wallet connected:', cCubeWalletConnected);
+      // Request account access
+      try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+      } catch (error) {
+        throw new Error('Wallet access denied. Please connect your wallet and try again.');
+      }
+
+      // Get provider and signer
+      let provider = new ethers.BrowserProvider(window.ethereum);
+      let signer = await provider.getSigner();
+      const walletAddress = await signer.getAddress();
+
+      console.log('💼 Wallet connected:', walletAddress);
       
-      // Define BSC RPC endpoints for fallback
-      const bscMainnetRpcs = [
-        'https://bsc-dataseed1.binance.org/',
-        'https://bsc-dataseed2.binance.org/', 
-        'https://bsc-dataseed3.binance.org/',
-        'https://bsc-dataseed1.defibit.io/',
-        'https://rpc.ankr.com/bsc'
-      ];
+      // Validate form data
+      if (!formData.tokenName?.trim()) {
+        throw new Error('Token name is required');
+      }
+      if (!formData.tokenSymbol?.trim()) {
+        throw new Error('Token symbol is required');
+      }
+      if (!formData.initialSupply || parseFloat(formData.initialSupply) <= 0) {
+        throw new Error('Initial supply must be greater than 0');
+      }
+
+      // Check network and switch if needed
+      const initialNetwork = await provider.getNetwork();
+      const chainId = Number(initialNetwork.chainId);
+      const expectedChainId = isMainnet ? 56 : 97;
       
-      const bscTestnetRpcs = [
-        'https://data-seed-prebsc-1-s1.binance.org:8545/',
-        'https://data-seed-prebsc-2-s1.binance.org:8545/',
-        'https://bsc-testnet.public.blastapi.io'
-      ];
-      
-      // Utility function to handle provider calls with RPC fallback
-      const safeProviderCall = async (operation, operationName = 'provider operation') => {
+      if (chainId !== expectedChainId) {
+        console.log('🔄 Switching to BSC network...');
+        
         try {
-          return await operation(provider);
-        } catch (error) {
-          console.warn(`⚠️ ${operationName} failed:`, error.message);
+          await switchToBSC(isMainnet);
+          // Refresh provider after network switch
+          const newProvider = new ethers.BrowserProvider(window.ethereum);
+          const newSigner = await newProvider.getSigner();
           
-          if (error.message.includes('missing trie node') || error.code === -32603 || error.code === -32000) {
-            console.log(`🔄 RPC error detected for ${operationName}, trying fallback...`);
-            
-            const rpcEndpoints = chainId === 56 ? bscMainnetRpcs : bscTestnetRpcs;
-            
-            // Try backup provider first if available
-            if (provider._backupProvider) {
-              try {
-                return await operation(provider._backupProvider);
-              } catch (backupError) {
-                console.warn('❌ Backup provider also failed:', backupError.message);
-              }
-            }
-            
-            // Try RPC endpoints
-            for (const rpcUrl of rpcEndpoints) {
-              try {
-                console.log(`🔍 Trying ${operationName} with RPC: ${rpcUrl}`);
-                const backupProvider = new ethers.JsonRpcProvider(rpcUrl);
-                const result = await operation(backupProvider);
-                provider._backupProvider = backupProvider;
-                console.log(`✅ ${operationName} successful with RPC:`, rpcUrl);
-                return result;
-              } catch (rpcError) {
-                console.warn(`❌ ${operationName} failed with RPC ${rpcUrl}:`, rpcError.message);
-                continue;
-              }
-            }
-            
-            throw new Error(`All RPC endpoints failed for ${operationName} - BSC network issues`);
-          } else {
-            throw error;
-          }
+          // Update references
+          provider = newProvider;
+          signer = newSigner;
+        } catch (switchError) {
+          throw new Error(`Failed to switch network: ${switchError.message}`);
         }
+      }
+
+      console.log('🌐 Network confirmed:', isMainnet ? 'BSC Mainnet' : 'BSC Testnet');
+      
+      // Use the simplified deployment function
+      const result = await deploySimpleToken({
+        name: formData.tokenName.trim(),
+        symbol: formData.tokenSymbol.trim(),
+        totalSupply: formData.initialSupply,
+        signer: signer,
+        onStatusUpdate: (status) => {
+          console.log('🔄', status);
+        }
+      });
+
+      console.log('✅ Deployment successful!', result);
+
+      // Save to database
+      const tokenData = {
+        ...formData,
+        contractAddress: result.contractAddress,
+        transactionHash: result.transactionHash,
+        explorerUrl: result.explorerUrl,
+        deployedAt: new Date().toISOString(),
+        ownerAddress: result.ownerAddress,
+        network: result.network,
+        decimals: result.decimals,
+        isMainnet: isMainnet
       };
 
-      if (window.ethereum) {
-        console.log('🔗 Setting up wallet provider...');
+      // Try to save to database (don't fail deployment if this fails)
+      try {
+        const saveResponse = await fetch('/api/deploy-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(tokenData)
+        });
         
-        // Request account access if needed
-        try {
-          await window.ethereum.request({ method: 'eth_requestAccounts' });
-          console.log('✅ Account access granted');
-        } catch (accountError) {
-          throw new Error(`Wallet access denied: ${accountError.message}`);
+        if (saveResponse.ok) {
+          console.log('✅ Token data saved to database');
+        } else {
+          console.warn('⚠️ Failed to save to database, but deployment succeeded');
         }
+      } catch (saveError) {
+        console.warn('⚠️ Database save error:', saveError.message);
+      }
 
-        // Create provider with enhanced configuration and RPC fallback
-        provider = new ethers.BrowserProvider(window.ethereum, 'any'); // 'any' allows network switching
+      // Show success result
+      setResult({
+        success: true,
+        message: '🎉 Token deployed successfully with your wallet!',
+        contractAddress: result.contractAddress,
+        transactionHash: result.transactionHash,
+        explorerUrl: result.explorerUrl,
+        deploymentInfo: {
+          tokenName: result.tokenName,
+          tokenSymbol: result.tokenSymbol,
+          totalSupply: result.totalSupply,
+          decimals: result.decimals,
+          ownerAddress: result.ownerAddress,
+          network: result.network,
+          contractAddress: result.contractAddress,
+          transactionHash: result.transactionHash,
+          deployedAt: tokenData.deployedAt
+        }
+      });
+
+      // Refresh token list
+      setTimeout(() => {
+        fetchLaunchedTokens();
+      }, 3000);
         
         // Test provider connectivity and implement RPC fallback if needed
         try {
@@ -2295,20 +2688,20 @@ const TokenLaunch = ({ onNavigate }) => {
         console.log('========================');
         
         // Validate network connection with comprehensive debugging
-        const network = await provider.getNetwork();
+        const validationNetwork = await provider.getNetwork();
         console.log('🌐 NETWORK VALIDATION:');
         console.log('======================');
-        console.log(`Connected network: ${network.name}`);
-        console.log(`Chain ID: ${network.chainId.toString()}`);
+        console.log(`Connected network: ${validationNetwork.name}`);
+        console.log(`Chain ID: ${validationNetwork.chainId.toString()}`);
         console.log(`Expected BSC networks: 56 (Mainnet) or 97 (Testnet)`);
-        console.log(`Network valid: ${network.chainId === BigInt(56) || network.chainId === BigInt(97)}`);
+        console.log(`Network valid: ${validationNetwork.chainId === BigInt(56) || validationNetwork.chainId === BigInt(97)}`);
         
         // Check if wallet extension shows same network
         try {
           const walletChainId = await window.ethereum.request({ method: 'eth_chainId' });
           const walletChainIdDecimal = parseInt(walletChainId, 16);
           console.log(`Wallet extension Chain ID: ${walletChainIdDecimal}`);
-          console.log(`Provider vs Wallet match: ${network.chainId.toString() === walletChainIdDecimal.toString()}`);
+          console.log(`Provider vs Wallet match: ${validationNetwork.chainId.toString() === walletChainIdDecimal.toString()}`);
           
           if (network.chainId.toString() !== walletChainIdDecimal.toString()) {
             console.log('🚨 NETWORK MISMATCH: Provider and wallet show different networks!');
@@ -2319,10 +2712,10 @@ const TokenLaunch = ({ onNavigate }) => {
         }
         console.log('======================');
         
-        if (network.chainId !== BigInt(56) && network.chainId !== BigInt(97)) {
+        if (validationNetwork.chainId !== BigInt(56) && validationNetwork.chainId !== BigInt(97)) {
           throw new Error(`Wrong network detected! 
           
-🌐 Current Network: ${network.name} (Chain ID: ${network.chainId})
+🌐 Current Network: ${validationNetwork.name} (Chain ID: ${validationNetwork.chainId})
 ✅ Required Networks: BSC Mainnet (56) or BSC Testnet (97)
 
 💡 Please switch to BSC network in your wallet:
@@ -2331,22 +2724,18 @@ const TokenLaunch = ({ onNavigate }) => {
 3. Choose "BSC Mainnet" or "BSC Testnet"
 4. Refresh this page and try again`);
         }
-        
-      } else {
-        throw new Error('No wallet provider found. Please install MetaMask or another wallet extension.');
-      }
 
-      // Get network info
-      const network = await provider.getNetwork();
-      const chainId = isMainnet ? 56 : 97; // BSC Mainnet : BSC Testnet
+      // Get current network info
+      const currentNetwork = await provider.getNetwork();
+      const targetChainId = isMainnet ? 56 : 97; // BSC Mainnet : BSC Testnet
       
       // Check if we're on the correct network
-      if (Number(network.chainId) !== chainId) {
+      if (Number(currentNetwork.chainId) !== targetChainId) {
         // Request network switch
         try {
           await window.ethereum.request({
             method: 'wallet_switchEthereumChain',
-            params: [{ chainId: `0x${chainId.toString(16)}` }],
+            params: [{ chainId: `0x${targetChainId.toString(16)}` }],
           });
         } catch (switchError) {
           if (switchError.code === 4902) {
@@ -2382,13 +2771,13 @@ const TokenLaunch = ({ onNavigate }) => {
     }
 
     // Get network information early for BSC detection
-    const currentNetwork = await provider.getNetwork();
-    const networkChainId = Number(currentNetwork.chainId);
+    const detectedNetwork = await provider.getNetwork();
+    const networkChainId = Number(detectedNetwork.chainId);
     const isBSC = networkChainId === 56 || networkChainId === 97; // BSC Mainnet or Testnet
     
     console.log('Network detected:', {
       chainId: networkChainId,
-      name: currentNetwork.name,
+      name: detectedNetwork.name,
       isBSC: isBSC
     });
 
@@ -2634,7 +3023,7 @@ const TokenLaunch = ({ onNavigate }) => {
       
       console.log('Current network (already detected):', {
         chainId: networkChainId.toString(),
-        name: currentNetwork.name,
+        name: detectedNetwork.name,
         isBSC: isBSC
       });
       
@@ -4355,7 +4744,7 @@ DO NOT attempt further mainnet deployments until testnet testing is successful.`
           initialSupply: formData.initialSupply,
           ownerAddress: walletAddress,
           network: isMainnet ? 'BSC Mainnet' : 'BSC Testnet',
-          chainId,
+          chainId: isMainnet ? 56 : 97,
           deployedAt: new Date().toISOString(),
           explorerUrl
         }
@@ -4714,6 +5103,418 @@ DO NOT attempt further mainnet deployments until testnet testing is successful.`
       console.log('Copied to clipboard:', text);
     } catch (error) {
       console.error('Failed to copy:', error);
+    }
+  };
+
+  // Built-in renounce functionality
+  const handleRenounceOwnership = async (contractAddress) => {
+    setRenounceError(null); // Clear previous errors
+    
+    if (!window.ethereum) {
+      setRenounceError({
+        message: "Web3 wallet not found",
+        details: "Please install MetaMask or another Web3 wallet to renounce ownership",
+        timestamp: new Date().toISOString(),
+        contractAddress
+      });
+      return;
+    }
+
+    try {
+      console.log('🔍 Starting renounce process for contract:', contractAddress);
+      
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      const signer = await provider.getSigner();
+      const userAddress = await signer.getAddress();
+      
+      console.log('👤 User address:', userAddress);
+      
+      // Check network
+      const network = await provider.getNetwork();
+      console.log('🌐 Current network:', network.chainId, network.name);
+      
+      // Validate network
+      const expectedChainId = isMainnet ? 56n : 97n;
+      if (network.chainId !== expectedChainId) {
+        const networkName = network.chainId === 56n ? 'BSC Mainnet' : 
+                           network.chainId === 97n ? 'BSC Testnet' : 
+                           `Unknown (${network.chainId})`;
+        const expectedName = isMainnet ? 'BSC Mainnet' : 'BSC Testnet';
+        
+        setRenounceError({
+          message: "Wrong network detected",
+          details: `You're connected to: ${networkName} (Chain ID: ${network.chainId})\nExpected: ${expectedName} (Chain ID: ${expectedChainId})\n\nPlease switch to the correct network in your wallet.\n\n🔧 Quick Fix:\n1. Open MetaMask\n2. Click network dropdown\n3. Select "${expectedName}"`,
+          timestamp: new Date().toISOString(),
+          contractAddress,
+          currentNetwork: networkName,
+          expectedNetwork: expectedName,
+          currentChainId: network.chainId.toString(),
+          expectedChainId: expectedChainId.toString()
+        });
+        return;
+      }
+      
+      // Check if contract exists (with RPC error handling)
+      let contractCode;
+      try {
+        contractCode = await provider.getCode(contractAddress);
+        console.log('✅ Contract found, code length:', contractCode.length);
+      } catch (rpcError) {
+        console.error('❌ RPC Error when checking contract:', rpcError);
+        
+        if (rpcError.message?.includes('not supported') || rpcError.code === 'UNKNOWN_ERROR') {
+          setRenounceError({
+            message: "RPC Provider Issue",
+            details: `Your MetaMask RPC endpoint doesn't support contract validation.\n\n🔧 Quick Fix:\n1. Open MetaMask Settings\n2. Go to Networks\n3. Edit your current network\n4. Use these official RPC URLs:\n\nBSC Mainnet: https://bsc-dataseed.binance.org\nBSC Testnet: https://data-seed-prebsc-1-s1.binance.org:8545\n\nTechnical Error: ${rpcError.message}`,
+            timestamp: new Date().toISOString(),
+            contractAddress,
+            networkInfo: `Chain ${network.chainId}`,
+            rpcError: rpcError.toString(),
+            solution: "Update RPC URL in MetaMask"
+          });
+          return;
+        }
+        
+        // For other RPC errors, continue anyway (might be temporary)
+        console.warn('⚠️ Contract validation failed, continuing anyway...');
+        contractCode = '0x01'; // Assume contract exists
+      }
+      
+      if (contractCode === '0x') {
+        setRenounceError({
+          message: "Contract not found",
+          details: `No contract found at address: ${contractAddress}\n\nThis could mean:\n1. The contract was not deployed to this network\n2. The contract address is incorrect\n3. You're connected to the wrong network\n\nCurrent network: ${network.chainId === 56n ? 'BSC Mainnet' : network.chainId === 97n ? 'BSC Testnet' : 'Unknown'}`,
+          timestamp: new Date().toISOString(),
+          contractAddress,
+          networkInfo: `Chain ${network.chainId}`,
+          contractCode
+        });
+        return;
+      }
+      
+      // Create contract instance with the user's signer
+      const contract = new ethers.Contract(
+        contractAddress,
+        TOKEN_CONTRACT_ABI,
+        signer
+      );
+      
+      // Check if user is the owner
+      let currentOwner;
+      try {
+        console.log('🔍 Checking contract owner...');
+        currentOwner = await contract.owner();
+        console.log('👑 Current contract owner:', currentOwner);
+        console.log('🔍 User address:', userAddress);
+        
+        if (currentOwner.toLowerCase() !== userAddress.toLowerCase()) {
+          setRenounceError({
+            message: "Not the contract owner",
+            details: `You are not the owner of this contract!\n\nContract owner: ${currentOwner}\nYour address: ${userAddress}\n\nOnly the contract owner can renounce ownership.`,
+            timestamp: new Date().toISOString(),
+            contractAddress,
+            userAddress,
+            contractOwner: currentOwner
+          });
+          return;
+        }
+        
+        console.log('✅ Ownership verified - user is the contract owner');
+        
+      } catch (ownerError) {
+        console.error('❌ Failed to check contract owner:', ownerError);
+        
+        let errorDetails = `Error calling owner() function: ${ownerError.message}`;
+        
+        if (ownerError.code === 'CALL_EXCEPTION') {
+          errorDetails = `Contract call failed - this usually means:\n\n1. Contract doesn't have an owner() function\n2. Contract ABI mismatch\n3. Contract is not a standard ERC20 with ownership\n4. Network/RPC issues\n\nTechnical details:\n${ownerError.message}`;
+        }
+        
+        setRenounceError({
+          message: "Failed to verify contract ownership",
+          details: errorDetails,
+          timestamp: new Date().toISOString(),
+          contractAddress,
+          userAddress,
+          networkInfo: `Chain ${network.chainId}`,
+          errorCode: ownerError.code,
+          error: ownerError.toString()
+        });
+        return;
+      }
+      
+      // Confirm with user
+      const confirmed = window.confirm(
+        "⚠️ WARNING: Renouncing ownership is PERMANENT and IRREVERSIBLE!\n\n" +
+        "After renouncement:\n" +
+        "• You cannot mint new tokens\n" +
+        "• You cannot modify the contract\n" +
+        "• The contract becomes fully decentralized\n\n" +
+        "Are you absolutely sure you want to proceed?"
+      );
+      
+      if (!confirmed) {
+        console.log('❌ User cancelled renouncement');
+        return;
+      }
+      
+      console.log('🚫 Renouncing ownership for contract:', contractAddress);
+      
+      // Estimate gas first
+      let gasEstimate;
+      try {
+        gasEstimate = await contract.transferOwnership.estimateGas("0x0000000000000000000000000000000000000000");
+        console.log('⛽ Estimated gas:', gasEstimate.toString());
+      } catch (gasError) {
+        console.error('❌ Gas estimation failed:', gasError);
+        setRenounceError({
+          message: "Gas estimation failed",
+          details: `Failed to estimate gas for renouncement.\nError: ${gasError.message}\n\nThis usually means the transaction would fail. Please check:\n1. You have enough BNB for gas\n2. You are the contract owner\n3. The contract allows ownership transfer`,
+          timestamp: new Date().toISOString(),
+          contractAddress,
+          error: gasError.toString()
+        });
+        return;
+      }
+      
+      // Call transferOwnership with zero address (renounce)
+      const tx = await contract.transferOwnership("0x0000000000000000000000000000000000000000", {
+        gasLimit: Math.floor(Number(gasEstimate) * 1.2) // Add 20% buffer
+      });
+      
+      console.log('⏳ Renunciation transaction submitted:', tx.hash);
+      alert(`Renunciation transaction submitted!\nTransaction: ${tx.hash}\n\nWaiting for confirmation...`);
+      
+      // Wait for transaction confirmation
+      const receipt = await tx.wait();
+      
+      console.log('✅ Ownership renounced successfully!', receipt);
+      alert(`🎉 Ownership renounced successfully!\n\nYour token is now fully decentralized.\nTransaction: ${tx.hash}\n\nBlock: ${receipt.blockNumber}`);
+      
+    } catch (error) {
+      console.error('❌ Failed to renounce ownership:', error);
+      
+      let errorMessage = 'Failed to renounce ownership';
+      let errorDetails = `Error: ${error.message || error.toString()}\n\nFull error object:\n${JSON.stringify(error, null, 2)}`;
+      
+      if (error.code === 4001) {
+        errorMessage = 'Transaction rejected by user';
+        errorDetails = 'User rejected the transaction in their wallet';
+      } else if (error.code === -32603) {
+        errorMessage = 'Insufficient funds for gas fees';
+        errorDetails = 'You need more BNB to pay for transaction gas fees';
+      } else if (error.code === -32602) {
+        errorMessage = 'Invalid parameters';
+        errorDetails = `Invalid transaction parameters\nError: ${error.message}`;
+      } else if (error.code === -32000) {
+        errorMessage = 'Transaction would fail';
+        errorDetails = 'Transaction would fail - you may not be the owner or have insufficient gas';
+      } else if (error.message?.includes('Not the owner')) {
+        errorMessage = 'Not the contract owner';
+        errorDetails = 'You are not the owner of this contract';
+      } else if (error.message?.includes('insufficient funds')) {
+        errorMessage = 'Insufficient funds';
+        errorDetails = 'Insufficient BNB for gas fees';
+      } else if (error.message?.includes('execution reverted')) {
+        errorMessage = 'Transaction reverted';
+        errorDetails = 'Transaction reverted - you may not be the contract owner';
+      }
+      
+      setRenounceError({
+        message: errorMessage,
+        details: errorDetails,
+        timestamp: new Date().toISOString(),
+        contractAddress,
+        errorCode: error.code,
+        errorData: error.data,
+        fullError: error.toString()
+      });
+    }
+  };
+
+  // Enhanced renounce function that tries multiple methods
+  const handleSmartRenounce = async (contractAddress) => {
+    setRenounceError(null);
+    
+    if (!window.ethereum) {
+      setRenounceError({
+        message: "Web3 wallet not found",
+        details: "Please install MetaMask or another Web3 wallet",
+        timestamp: new Date().toISOString(),
+        contractAddress
+      });
+      return;
+    }
+
+    try {
+      // DEBUG: Check current wallet vs contract owner
+      const debugProvider = new ethers.BrowserProvider(window.ethereum);
+      const debugSigner = await debugProvider.getSigner();
+      const debugUserAddress = await debugSigner.getAddress();
+      
+      // Get contract owner
+      const ownerContract = new ethers.Contract(contractAddress, [
+        "function owner() view returns (address)"
+      ], debugProvider);
+      
+      const contractOwner = await ownerContract.owner();
+      
+      console.log("🔍 OWNERSHIP DEBUG:");
+      console.log("Connected wallet:", debugUserAddress);
+      console.log("Contract owner:", contractOwner);
+      console.log("Addresses match:", debugUserAddress.toLowerCase() === contractOwner.toLowerCase());
+      
+      if (debugUserAddress.toLowerCase() !== contractOwner.toLowerCase()) {
+        setRenounceError({
+          message: "❌ Wallet Ownership Mismatch",
+          details: `Connected wallet: ${debugUserAddress}\nContract owner: ${contractOwner}\n\nYou can only renounce ownership from the wallet that owns the contract. Please switch to the correct wallet in MetaMask.`,
+          timestamp: new Date().toISOString(),
+          contractAddress,
+          technicalDetails: {
+            connectedWallet: debugUserAddress,
+            contractOwner: contractOwner,
+            network: await debugProvider.getNetwork()
+          }
+        });
+        return;
+      }
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      const signer = await provider.getSigner();
+      const userAddress = await signer.getAddress();
+      
+      // Check BNB balance first
+      const balance = await provider.getBalance(userAddress);
+      const balanceBNB = ethers.formatEther(balance);
+      const network = await provider.getNetwork();
+      const isTestnet = network.chainId === 97n;
+      
+      console.log(`💰 Current BNB balance: ${balanceBNB} BNB`);
+      
+      // Estimate gas for renouncement
+      const contract = new ethers.Contract(contractAddress, TOKEN_CONTRACT_ABI, signer);
+      
+      let estimatedGas = 0n;
+      let gasPrice = 0n;
+      
+      try {
+        // Try to estimate gas for transferOwnership to burn address
+        estimatedGas = await contract.transferOwnership.estimateGas("0x000000000000000000000000000000000000dEaD");
+        const feeData = await provider.getFeeData();
+        gasPrice = feeData.gasPrice || 5000000000n; // 5 gwei fallback
+        
+        const estimatedCost = estimatedGas * gasPrice;
+        const estimatedCostBNB = ethers.formatEther(estimatedCost);
+        
+        console.log(`⛽ Estimated gas: ${estimatedGas.toString()}`);
+        console.log(`💸 Estimated cost: ${estimatedCostBNB} BNB`);
+        
+        if (balance < estimatedCost) {
+          const needed = ethers.formatEther(estimatedCost - balance);
+          setRenounceError({
+            message: "Insufficient BNB for gas fees",
+            details: `You need more BNB to pay for gas fees.\n\nYour balance: ${balanceBNB} BNB\nEstimated cost: ${estimatedCostBNB} BNB\nAdditional needed: ${needed} BNB\n\n${isTestnet ? 
+              '🔧 Get testnet BNB:\nhttps://testnet.binance.org/faucet-smart' : 
+              '🔧 Get BNB:\n1. Buy on exchange (Binance, Coinbase)\n2. Use PancakeSwap to swap tokens\n3. Transfer from another wallet'
+            }`,
+            timestamp: new Date().toISOString(),
+            contractAddress,
+            currentBalance: balanceBNB,
+            estimatedCost: estimatedCostBNB,
+            additionalNeeded: needed,
+            isTestnet
+          });
+          return;
+        }
+        
+      } catch (gasError) {
+        console.warn('⚠️ Gas estimation failed, continuing anyway...', gasError.message);
+      }
+      
+      const confirmed = window.confirm(
+        "⚠️ SMART RENOUNCE MODE\n\n" +
+        `Current balance: ${balanceBNB} BNB\n` +
+        `Estimated cost: ${estimatedGas > 0n ? ethers.formatEther(estimatedGas * gasPrice) : '~0.001'} BNB\n\n` +
+        "This will try different renouncement methods:\n" +
+        "1. renounceOwnership() function\n" +
+        "2. transferOwnership to burn address\n\n" +
+        "WARNING: This is PERMANENT and IRREVERSIBLE!\n\n" +
+        "Continue?"
+      );
+      
+      if (!confirmed) return;
+      
+      console.log('🧠 Smart renounce for:', contractAddress);
+      
+      // Method 1: Try renounceOwnership() function first
+      try {
+        console.log('🔄 Trying renounceOwnership() function...');
+        const renounceFunc = contract.renounceOwnership;
+        if (renounceFunc) {
+          const tx = await renounceFunc();
+          console.log('✅ renounceOwnership() succeeded:', tx.hash);
+          alert(`✅ Ownership renounced using renounceOwnership()!\nTransaction: ${tx.hash}`);
+          const receipt = await tx.wait();
+          alert(`🎉 Confirmed! Block: ${receipt.blockNumber}`);
+          return;
+        }
+      } catch (renounceError) {
+        console.log('❌ renounceOwnership() failed, trying alternatives...', renounceError.message);
+      }
+      
+      // Method 2: Try transferOwnership to common burn addresses
+      const burnAddresses = [
+        "0x000000000000000000000000000000000000dEaD", // Burn address
+        "0x0000000000000000000000000000000000000001", // Minimal address
+      ];
+      
+      for (const burnAddress of burnAddresses) {
+        try {
+          console.log(`🔄 Trying transferOwnership to ${burnAddress}...`);
+          const tx = await contract.transferOwnership(burnAddress);
+          console.log(`✅ Transfer to ${burnAddress} succeeded:`, tx.hash);
+          alert(`✅ Ownership transferred to burn address!\nTo: ${burnAddress}\nTransaction: ${tx.hash}`);
+          const receipt = await tx.wait();
+          alert(`🎉 Confirmed! Block: ${receipt.blockNumber}`);
+          return;
+        } catch (transferError) {
+          console.log(`❌ Transfer to ${burnAddress} failed:`, transferError.message);
+        }
+      }
+      
+      // If all methods fail
+      setRenounceError({
+        message: "All renouncement methods failed",
+        details: `This contract prevents renouncement by design.\n\nThe contract:\n1. Doesn't have renounceOwnership() function\n2. Prevents transferOwnership to zero/burn addresses\n\nYour options:\n1. Deploy a new contract with proper renouncement\n2. Keep the current ownership\n3. Transfer to a trusted burn address manually`,
+        timestamp: new Date().toISOString(),
+        contractAddress,
+        suggestion: "Contract doesn't support renouncement"
+      });
+      
+    } catch (error) {
+      console.error('❌ Smart renounce failed:', error);
+      
+      if (error.message?.includes('insufficient funds')) {
+        setRenounceError({
+          message: "Insufficient BNB for gas fees",
+          details: `You don't have enough BNB to pay for gas fees.\n\nError: ${error.message}\n\n${network.chainId === 97n ? 
+            '🔧 Get testnet BNB:\nhttps://testnet.binance.org/faucet-smart' : 
+            '🔧 Get BNB:\n1. Buy on exchange\n2. Use PancakeSwap\n3. Transfer from another wallet'
+          }`,
+          timestamp: new Date().toISOString(),
+          contractAddress,
+          error: error.toString()
+        });
+      } else {
+        setRenounceError({
+          message: "Smart renounce error",
+          details: `Error: ${error.message}`,
+          timestamp: new Date().toISOString(),
+          contractAddress,
+          error: error.toString()
+        });
+      }
     }
   };
 
@@ -5114,7 +5915,7 @@ DO NOT attempt further mainnet deployments until testnet testing is successful.`
             loading={loading}
           >
             {loading && <LoadingSpinner />}
-            {loading ? 'Deploying via Server...' : '🚀 Deploy Token (Server-Side)'}
+            {loading ? 'Deploying Token...' : '� Deploy Token'}
           </LaunchButton>
         </ButtonContainer>
 
@@ -5126,7 +5927,8 @@ DO NOT attempt further mainnet deployments until testnet testing is successful.`
             <p>{result.message}</p>
             
             {result.success && result.deploymentInfo && (
-              <TokenDetails>
+              <>
+                <TokenDetails>
                 <DetailRow>
                   <DetailLabel>Token Name:</DetailLabel>
                   <DetailValue>{result.deploymentInfo.tokenName}</DetailValue>
@@ -5150,8 +5952,8 @@ DO NOT attempt further mainnet deployments until testnet testing is successful.`
                 <DetailRow>
                   <DetailLabel>Contract Address:</DetailLabel>
                   <DetailValue>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      {result.contractAddress}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', wordBreak: 'keep-all', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: '0.9em' }}>{result.contractAddress}</span>
                       <CopyButton onClick={() => copyToClipboard(result.contractAddress)} title="Copy address">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
@@ -5185,6 +5987,116 @@ DO NOT attempt further mainnet deployments until testnet testing is successful.`
                   <DetailValue>{new Date(result.deploymentInfo.deployedAt).toLocaleString()}</DetailValue>
                 </DetailRow>
               </TokenDetails>
+              
+              <ButtonsContainer>
+                <PancakeSwapButton
+                  onClick={() => {
+                    const pancakeSwapUrl = `https://pancakeswap.finance/add/BNB/${result.contractAddress}`;
+                    window.open(pancakeSwapUrl, '_blank');
+                  }}
+                  title="Add liquidity on PancakeSwap"
+                >
+                  🥞 Add Liquidity on PancakeSwap
+                </PancakeSwapButton>
+                
+                <RenounceButton
+                  onClick={() => {
+                    const bscScanUrl = isMainnet 
+                      ? `https://bscscan.com/address/${result.contractAddress}#writeContract`
+                      : `https://testnet.bscscan.com/address/${result.contractAddress}#writeContract`;
+                    window.open(bscScanUrl, '_blank');
+                  }}
+                  title="Renounce ownership on BSCScan"
+                >
+                  🚫 Renounce Ownership
+                </RenounceButton>
+              </ButtonsContainer>
+              
+              <SourceCodeSection>
+                <SourceCodeTitle>📋 Contract Source Code for BSCScan Verification</SourceCodeTitle>
+                <SourceCodeTextarea 
+                  value={CONTRACT_SOURCE_CODE}
+                  readOnly
+                  onClick={(e) => e.target.select()}
+                />
+                <CopySourceButton 
+                  onClick={() => {
+                    navigator.clipboard.writeText(CONTRACT_SOURCE_CODE);
+                    // You could add a toast notification here
+                  }}
+                >
+                  📋 Copy Source Code
+                </CopySourceButton>
+                
+                <VerificationSteps>
+                  <SourceCodeTitle style={{ marginBottom: '8px', fontSize: '0.95rem' }}>
+                    🔐 How to Verify & Renounce Ownership:
+                  </SourceCodeTitle>
+                  <StepsList>
+                    <li>Go to your contract on BSCScan: <strong>{isMainnet ? 'bscscan.com' : 'testnet.bscscan.com'}</strong></li>
+                    <li>Click "Contract" tab → "Verify and Publish"</li>
+                    <li>Select compiler: <strong>v0.8.30+commit.6e6ed01e</strong></li>
+                    <li>Contract Name: <strong>CustomToken</strong></li>
+                    <li>Paste the source code above</li>
+                    <li>After verification succeeds, go to "Write Contract" tab</li>
+                    <li>Connect your wallet and call <strong>transferOwnership(0x0000000000000000000000000000000000000000)</strong></li>
+                  </StepsList>
+                  <VerificationInfo>
+                    💡 <strong>Note:</strong> Contract verification may take 1-2 minutes. Once verified, you can renounce ownership to make your token fully decentralized.
+                  </VerificationInfo>
+                </VerificationSteps>
+                
+                <RenounceInstructions>
+                  <SourceCodeTitle style={{ marginBottom: '8px', fontSize: '0.95rem', color: '#ff6b6b' }}>
+                    ⚠️ Important: Renouncing Ownership
+                  </SourceCodeTitle>
+                  <VerificationInfo style={{ color: '#ffb3b3' }}>
+                    Renouncing ownership is <strong>PERMANENT and IRREVERSIBLE</strong>. After renouncement:
+                    <br/>• You cannot mint new tokens • You cannot modify the contract • The contract becomes fully decentralized
+                    <br/>Only renounce after you're satisfied with your token setup!
+                  </VerificationInfo>
+                  
+                  <DirectRenounceButton
+                    onClick={() => handleSmartRenounce(result.contractAddress)}
+                  >
+                    🚫 Renounce Ownership
+                  </DirectRenounceButton>
+                  
+                  <div style={{ fontSize: '0.8rem', color: '#b0b0b0', marginTop: '10px' }}>
+                    💡 <strong>Renouncement Info:</strong>
+                    <br/>• This will permanently remove your control over the contract
+                    <br/>• Uses smart detection to find the best renouncement method
+                    <br/>• Make sure you have enough BNB for gas fees
+                    <br/>• Action is irreversible once confirmed
+                  </div>
+                </RenounceInstructions>
+                
+                {renounceError && (
+                  <ErrorDisplay>
+                    <ErrorTitle>❌ Renouncement Error: {renounceError.message}</ErrorTitle>
+                    <ErrorDetails>{renounceError.details}</ErrorDetails>
+                    <CopyErrorButton
+                      onClick={() => {
+                        const errorText = `RENOUNCEMENT ERROR REPORT
+Timestamp: ${renounceError.timestamp}
+Contract: ${renounceError.contractAddress}
+Error: ${renounceError.message}
+
+Details:
+${renounceError.details}
+
+Technical Info:
+${JSON.stringify(renounceError, null, 2)}`;
+                        navigator.clipboard.writeText(errorText);
+                        // Could add a toast notification here
+                      }}
+                    >
+                      📋 Copy Error Details
+                    </CopyErrorButton>
+                  </ErrorDisplay>
+                )}
+              </SourceCodeSection>
+              </>
             )}
           </ResultContainer>
         )}

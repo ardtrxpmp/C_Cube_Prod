@@ -28,6 +28,32 @@ app.use((req, res, next) => {
 app.use('/api/deploy-token', deployTokenRoute);
 app.get('/api/tokens/launched', launchedTokensRoute);
 
+// Server info endpoint for getting server wallet address
+app.get('/api/server-info', (req, res) => {
+  try {
+    const { ethers } = require('ethers');
+    const privateKey = process.env.PRIVATE_KEY;
+    
+    if (!privateKey) {
+      return res.status(500).json({
+        error: 'Server private key not configured'
+      });
+    }
+    
+    const wallet = new ethers.Wallet(privateKey);
+    
+    res.json({
+      walletAddress: wallet.address,
+      message: 'Server wallet address for gas transfers'
+    });
+  } catch (error) {
+    console.error('Error getting server info:', error);
+    res.status(500).json({
+      error: 'Failed to get server information'
+    });
+  }
+});
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({ 

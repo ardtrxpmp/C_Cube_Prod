@@ -4,6 +4,7 @@ import { ThemeProvider } from 'styled-components';
 import { GlobalStyle, theme } from './styles/GlobalStyle';
 import Layout from './components/Layout';
 import { AppProvider } from './context/AppContext';
+import { WalletProvider } from './context/WalletContext';
 import EnvironmentDetection from './utils/EnvironmentDetection';
 import WebWarningBanner from './components/WebWarningBanner';
 import Header from './components/Header_New';
@@ -277,10 +278,11 @@ function App() {
 
   // Main website with proper URL routing
   return (
-    <ThemeProvider theme={theme}>
-      <GlobalStyle />
-      <Router>
-        <Routes>
+    <WalletProvider>
+      <ThemeProvider theme={theme}>
+        <GlobalStyle />
+        <Router>
+          <Routes>
           {/* Website routes with proper URLs */}
           <Route path="/" element={
             <>
@@ -348,6 +350,7 @@ function App() {
         </Routes>
       </Router>
     </ThemeProvider>
+    </WalletProvider>
   );
 }
 

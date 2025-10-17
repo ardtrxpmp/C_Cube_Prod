@@ -2,9 +2,78 @@ const { ethers } = require('ethers');
 const fs = require('fs');
 const path = require('path');
 const solc = require('solc');
+const axios = require('axios');
 
 // Load environment variables
 require('dotenv').config();
+
+// Auto-verify contract on BSCScan
+async function verifyContract(contractAddress, constructorArgs, isMainnet = false) {
+    const API_KEY = process.env.BSCSCAN_API_KEY;
+    if (!API_KEY) {
+        console.warn('⚠️ BSCScan API key not configured, skipping verification');
+        return { success: false, message: 'API key not configured' };
+    }
+
+    const apiUrl = isMainnet 
+        ? 'https://api.bscscan.com/api'
+        : 'https://api-testnet.bscscan.com/api';
+
+    // Read contract source code
+    const contractPath = path.join(__dirname, '..', 'token-creator', 'contracts', 'CustomToken.sol');
+    const sourceCode = fs.readFileSync(contractPath, 'utf8');
+
+    try {
+        console.log('🔍 Verifying contract on BSCScan...');
+        
+        const verificationData = {
+            apikey: API_KEY,
+            module: 'contract',
+            action: 'verifysourcecode',
+            contractaddress: contractAddress,
+            sourceCode: sourceCode,
+            codeformat: 'solidity-single-file',
+            contractname: 'CustomToken',
+            compilerversion: 'v0.8.30+commit.6e6ed01e', // Exact compiler version
+            optimizationUsed: '0',
+            runs: '200',
+            constructorArguements: constructorArgs,
+            evmversion: 'default',
+            licenseType: '3' // MIT License
+        };
+
+        const response = await axios.post(apiUrl, new URLSearchParams(verificationData));
+        
+        if (response.data.status === '1') {
+            console.log('✅ Contract verification submitted successfully');
+            console.log(`📋 Verification GUID: ${response.data.result}`);
+            
+            // Check verification status
+            await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+            
+            const statusResponse = await axios.get(apiUrl, {
+                params: {
+                    apikey: API_KEY,
+                    module: 'contract',
+                    action: 'checkverifystatus',
+                    guid: response.data.result
+                }
+            });
+            
+            return {
+                success: true,
+                guid: response.data.result,
+                status: statusResponse.data.result
+            };
+        } else {
+            console.error('❌ Contract verification failed:', response.data.result);
+            return { success: false, message: response.data.result };
+        }
+    } catch (error) {
+        console.error('❌ Verification error:', error.message);
+        return { success: false, message: error.message };
+    }
+}
 
 // Save individual token file to GitHub database
 async function saveTokenToGitHub(tokenData) {
@@ -435,6 +504,22 @@ async function deployToken(req, res) {
         console.log(`Contract Address: ${contractAddress}`);
         console.log(`Transaction Hash: ${transactionHash}`);
         
+        // Auto-verify contract on BSCScan
+        const constructorArgs = ethers.AbiCoder.defaultAbiCoder().encode(
+            ['string', 'string', 'uint8', 'uint256', 'address'],
+            [tokenName, tokenSymbol, decimals, initialSupply, actualWalletAddress]
+        ).slice(2); // Remove 0x prefix
+        
+        let verificationResult = null;
+        try {
+            verificationResult = await verifyContract(contractAddress, constructorArgs, isMainnet);
+            if (verificationResult.success) {
+                console.log('✅ Contract verification initiated successfully');
+            }
+        } catch (verifyError) {
+            console.warn('⚠️ Contract verification failed, but deployment succeeded:', verifyError.message);
+        }
+        
         // Save deployment info with additional metadata
         const deploymentInfo = {
             contractAddress,
@@ -482,7 +567,8 @@ async function deployToken(req, res) {
             contractAddress,
             transactionHash,
             explorerUrl,
-            deploymentInfo
+            deploymentInfo,
+            verification: verificationResult
         });
         
     } catch (error) {
