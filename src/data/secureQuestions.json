@@ -1,0 +1,96 @@
+{
+  "gamingHub": {
+    "version": "2.0.0-secure",
+    "categories": [
+      {
+        "id": "blockchain-basics",
+        "title": "Blockchain Fundamentals", 
+        "difficulty": "Beginner",
+        "questionSets": [
+          {
+            "id": "blockchain-basics-q1",
+            "question": "Categorize core blockchain concepts",
+            "dragItems": ["Block", "Transaction", "Hash", "Chain", "Node", "Network"],
+            "dropZones": [
+              {
+                "id": "core",
+                "label": "Core Concepts", 
+                "acceptedAnswerHashes": [
+                  "a8b5c3f2e1d4a7b9c6e8f1a2b5c9d3e7f0a4b8c2d6e0f3a7b1c5d9e2f6a0b4c8",
+                  "b9c6e8f1a2b5c9d3e7f0a4b8c2d6e0f3a7b1c5d9e2f6a0b4c8a5b3f2e1d4a7b9"
+                ]
+              },
+              {
+                "id": "features", 
+                "label": "Key Features",
+                "acceptedAnswerHashes": [
+                  "c0d7e4f8a1b5c9e2f6a0b4c8d2e6f0a3b7c1d5e9f3a7b0c4d8e1f5a9b2c6e0f4"
+                ]
+              }
+            ],
+            "explanation": {
+              "details": "Blockchain fundamentals include blocks as data containers, transactions as records of value transfer, and hash functions for security."
+            }
+          },
+          {
+            "id": "blockchain-basics-q2", 
+            "question": "Identify cryptocurrency types",
+            "dragItems": ["Bitcoin", "Ethereum", "Litecoin", "Dogecoin", "Monero", "Ripple"],
+            "dropZones": [
+              {
+                "id": "major",
+                "label": "Major Cryptocurrencies",
+                "acceptedAnswerHashes": [
+                  "d1e5f9a2b6c0d4e8f1a5b9c3d7e0f4a8b2c6d0e4f8a1b5c9d3e7f0a4b8c2d6e0",
+                  "e2f6a0b4c8d1e5f9a3b7c0d4e8f2a6b0c4d8e1f5a9b3c7d0e4f8a2b6c0d4e8f1"
+                ]
+              },
+              {
+                "id": "alternative",
+                "label": "Alternative Coins", 
+                "acceptedAnswerHashes": [
+                  "f3a7b1c5d9e2f6a0b4c8d2e6f0a3b7c1d5e9f3a7b0c4d8e1f5a9b2c6e0f4a8b3"
+                ]
+              }
+            ],
+            "explanation": {
+              "details": "Major cryptocurrencies like Bitcoin and Ethereum have the largest market caps, while alternative coins offer specialized features."
+            }
+          }
+        ]
+      },
+      {
+        "id": "crypto-security", 
+        "title": "Cryptography & Security",
+        "difficulty": "Intermediate",
+        "questionSets": [
+          {
+            "id": "crypto-security-q1",
+            "question": "Classify cryptographic security methods",
+            "dragItems": ["Private Key", "Public Key", "Digital Signature", "Hash Function", "Encryption", "Decryption"],
+            "dropZones": [
+              {
+                "id": "keyManagement",
+                "label": "Key Management",
+                "acceptedAnswerHashes": [
+                  "g4a8b2c6d0e4f8a1b5c9d3e7f0a4b8c2d6e0f3a7b1c5d9e2f6a0b4c8a5b3f2e1",
+                  "h5b9c3d7e1f5a9b2c6e0f4a8b3c7d0e4f8a2b6c0d4e8f1a5b9c3d7e0f4a8b2c6"
+                ]
+              },
+              {
+                "id": "cryptoProcesses",
+                "label": "Cryptographic Processes",
+                "acceptedAnswerHashes": [
+                  "i6c0d4e8f2a6b0c4d8e1f5a9b3c7d0e4f8a2b6c0d4e8f1a5b9c3d7e0f4a8b2c6"
+                ]
+              }
+            ],
+            "explanation": {
+              "details": "Key management involves private/public key pairs, while cryptographic processes include signatures, hashing, and encryption."
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,5 +1,112 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes, css } from 'styled-components';
+import { validateAnswer, obfuscateDataForLogging } from '../../utils/answerSecurity';
+
+// Secure database service for fetching gaming hub questions
+const fetchGamingHubData = async () => {
+  try {
+    const response = await fetch('https://raw.githubusercontent.com/cyfocube/C_DataBase/main/gaming-hub/questions.json');
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    const rawData = await response.json();
+    
+    // Transform the database structure to secure format with hashed answers
+    const transformedData = {
+      blockchain_fundamentals: [],
+      cryptography_master: [],
+      defi_adventure: [],
+      smart_contract_creator: []
+    };
+    
+    // Map database categories to our component's expected categories
+    const categoryMapping = {
+      'blockchain-basics': 'blockchain_fundamentals',
+      'crypto-security': 'cryptography_master', 
+      'defi-explorer': 'defi_adventure',
+      'smart-contracts': 'smart_contract_creator'
+    };
+    
+    if (rawData.gamingHub && rawData.gamingHub.categories) {
+      rawData.gamingHub.categories.forEach(category => {
+        const mappedCategory = categoryMapping[category.id];
+        if (mappedCategory && category.questionSets) {
+          // Transform question sets into secure format
+          category.questionSets.forEach(questionSet => {
+            const secureQuestion = {
+              id: questionSet.id || `${category.id}_${Math.random().toString(36).substr(2, 9)}`,
+              question: questionSet.question || questionSet.correctAnswers?.coreQuestion || 'Categorize blockchain concepts',
+              dragItems: questionSet.dragItems || [
+                ...(questionSet.correctAnswers?.coreItems || []),
+                ...(questionSet.correctAnswers?.featuresItems || []),
+                ...(questionSet.wrongAnswers || [])
+              ],
+              dropZones: questionSet.dropZones || [
+                { id: 'core', label: 'Core Concepts', acceptedAnswerHashes: [] },
+                { id: 'features', label: 'Key Features', acceptedAnswerHashes: [] }
+              ],
+              explanation: questionSet.explanation?.details || `Learn about ${category.title}`
+            };
+            transformedData[mappedCategory].push(secureQuestion);
+          });
+        }
+      });
+    }
+    
+    // Use obfuscated logging for security
+    const logData = obfuscateDataForLogging(transformedData);
+    console.log('📊 Secure database loaded:', logData);
+    console.log('✅ SECURE DATABASE DATA LOADED SUCCESSFULLY FROM GITHUB!');
+    return transformedData;
+  } catch (error) {
+    console.error('Error fetching secure gaming hub data:', error);
+    // Fallback to local secure data
+    try {
+      const fallbackData = await import('../../data/secureQuestions.json');
+      console.log('📦 Using local secure fallback data');
+      return fallbackData.default?.gamingHub ? transformSecureData(fallbackData.default) : null;
+    } catch (fallbackError) {
+      console.error('Fallback data also failed:', fallbackError);
+      return null;
+    }
+  }
+};
+
+// Transform secure database format to component format
+const transformSecureData = (secureData) => {
+  const transformedData = {
+    blockchain_fundamentals: [],
+    cryptography_master: [],
+    defi_adventure: [],
+    smart_contract_creator: []
+  };
+  
+  const categoryMapping = {
+    'blockchain-basics': 'blockchain_fundamentals',
+    'crypto-security': 'cryptography_master', 
+    'defi-explorer': 'defi_adventure',
+    'smart-contracts': 'smart_contract_creator'
+  };
+  
+  if (secureData.gamingHub && secureData.gamingHub.categories) {
+    secureData.gamingHub.categories.forEach(category => {
+      const mappedCategory = categoryMapping[category.id];
+      if (mappedCategory && category.questionSets) {
+        category.questionSets.forEach(questionSet => {
+          transformedData[mappedCategory].push({
+            id: questionSet.id,
+            question: questionSet.question,
+            dragItems: questionSet.dragItems,
+            dropZones: questionSet.dropZones,
+            explanation: questionSet.explanation?.details || `Learn about ${category.title}`
+          });
+        });
+      }
+    });
+  }
+  
+  return transformedData;
+};
 
 const levelUp = keyframes`
   0% { transform: scale(1); }
@@ -11,6 +118,21 @@ const questGlow = keyframes`
   0% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.5); }
   50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.8); }
   100% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.5); }
+`;
+
+const spinLoader = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
+const LoadingSpinner = styled.div`
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4f46e5;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: ${spinLoader} 1s linear infinite;
+  margin: 1rem auto;
 `;
 
 const GameContainer = styled.div`
@@ -613,6 +735,8 @@ const FeedbackMessage = styled.div`
 const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
   const [activeQuest, setActiveQuest] = useState(null);
   const [playerLevel, setPlayerLevel] = useState(1);
+  const [databaseData, setDatabaseData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [playerXP, setPlayerXP] = useState(0);
   const [draggedItem, setDraggedItem] = useState(null);
   const [dropZoneContents, setDropZoneContents] = useState({});
@@ -627,6 +751,18 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationData, setCelebrationData] = useState(null);
   const [floatingEmojis, setFloatingEmojis] = useState([]);
+
+  // Load database data on component mount
+  useEffect(() => {
+    const loadDatabaseData = async () => {
+      setIsLoading(true);
+      const data = await fetchGamingHubData();
+      setDatabaseData(data);
+      setIsLoading(false);
+    };
+    
+    loadDatabaseData();
+  }, []);
 
   // Load game progress on component mount
   useEffect(() => {
@@ -692,7 +828,7 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
         'Build your first block'
       ],
       completed: userProgress.completedNodes.includes('blockchain-basics-completed'),
-      progress: Math.min(userProgress.completedNodes.filter(n => n.startsWith('blockchain-basics-challenge-')).length * 2, 100),
+      progress: Math.min((userProgress.completedNodes.filter(n => n.startsWith('blockchain-basics-challenge-')).length / 5) * 100, 100),
       locked: false
     },
     {
@@ -710,8 +846,13 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
         'Complete security challenges'
       ],
       completed: userProgress.completedNodes.includes('crypto-security-completed'),
-      progress: Math.min(userProgress.completedNodes.filter(n => n.startsWith('crypto-security-challenge-')).length * 2, 100),
-      locked: !userProgress.completedNodes.includes('blockchain-basics-completed')
+      progress: Math.min((userProgress.completedNodes.filter(n => n.startsWith('crypto-security-challenge-')).length / 5) * 100, 100),
+      locked: (() => {
+        const isLocked = !userProgress.completedNodes.includes('blockchain-basics-completed');
+        console.log(`🔍 Checking crypto-security lock status: looking for 'blockchain-basics-completed' in:`, userProgress.completedNodes);
+        console.log(`🔒 Crypto-security locked: ${isLocked}`);
+        return isLocked;
+      })()
     },
     {
       id: 'defi-explorer',
@@ -728,7 +869,7 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
         'Complete DeFi simulation'
       ],
       completed: userProgress.completedNodes.includes('defi-explorer-completed'),
-      progress: Math.min(userProgress.completedNodes.filter(n => n.startsWith('defi-explorer-challenge-')).length * 2, 100),
+      progress: Math.min((userProgress.completedNodes.filter(n => n.startsWith('defi-explorer-challenge-')).length / 5) * 100, 100),
       locked: !userProgress.completedNodes.includes('crypto-security-completed')
     },
     {
@@ -746,7 +887,7 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
         'Audit for security'
       ],
       completed: userProgress.completedNodes.includes('smart-contracts-completed'),
-      progress: Math.min(userProgress.completedNodes.filter(n => n.startsWith('smart-contracts-challenge-')).length * 2, 100),
+      progress: Math.min((userProgress.completedNodes.filter(n => n.startsWith('smart-contracts-challenge-')).length / 5) * 100, 100),
       locked: !userProgress.completedNodes.includes('defi-explorer-completed')
     }
   ];
@@ -791,14 +932,46 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
     challengeSets['defi-explorer'].challenges = [];
     challengeSets['smart-contracts'].challenges = [];
     
-    // Blockchain Basics (Beginner) - 10 challenges
-    const beginnerTopics = [
-      ['Block', 'Transaction', 'Hash', 'Chain', 'Node', 'Network'],
-      ['Bitcoin', 'Ethereum', 'Litecoin', 'Dogecoin', 'Monero', 'Ripple'],
-      ['Wallet', 'Address', 'Balance', 'Send', 'Receive', 'Fee'],
-      ['Mining', 'Miner', 'Reward', 'Halving', 'Difficulty', 'Pool'],
-      ['Peer-to-Peer', 'Decentralized', 'Distributed', 'Central', 'Authority', 'Trust']
-    ];
+    // Use database data if available, otherwise fallback to hardcoded data
+    let beginnerTopics, intermediateTopics, advancedTopics, expertTopics;
+    
+    if (databaseData && databaseData.blockchain_fundamentals) {
+      // Transform database data to match expected format
+      // Since database data is already structured as challenges, we need to extract dragItems
+      beginnerTopics = databaseData.blockchain_fundamentals.length > 0 ? 
+        databaseData.blockchain_fundamentals.map(challenge => challenge.dragItems || []) :
+        [];
+      
+      intermediateTopics = databaseData.cryptography_master && databaseData.cryptography_master.length > 0 ?
+        databaseData.cryptography_master.map(challenge => challenge.dragItems || []) :
+        [];
+        
+      advancedTopics = databaseData.defi_adventure && databaseData.defi_adventure.length > 0 ?
+        databaseData.defi_adventure.map(challenge => challenge.dragItems || []) :
+        [];
+        
+      expertTopics = databaseData.smart_contract_creator && databaseData.smart_contract_creator.length > 0 ?
+        databaseData.smart_contract_creator.map(challenge => challenge.dragItems || []) :
+        [];
+    }
+    
+    // Fallback to hardcoded data if database data not available
+    if (!beginnerTopics || beginnerTopics.length === 0 || beginnerTopics.every(topic => !topic || topic.length === 0)) {
+      beginnerTopics = [
+        ['Block', 'Transaction', 'Hash', 'Chain', 'Node', 'Network'],
+        ['Bitcoin', 'Ethereum', 'Litecoin', 'Dogecoin', 'Monero', 'Ripple'],
+        ['Wallet', 'Address', 'Balance', 'Send', 'Receive', 'Fee'],
+        ['Mining', 'Miner', 'Reward', 'Halving', 'Difficulty', 'Pool'],
+        ['Peer-to-Peer', 'Decentralized', 'Distributed', 'Central', 'Authority', 'Trust']
+      ];
+      console.log('🔄 Using hardcoded beginner topics as fallback');
+    }
+
+    // Ensure we have valid topic arrays before processing
+    if (!beginnerTopics || !Array.isArray(beginnerTopics) || beginnerTopics.length === 0) {
+      console.warn('⚠️ No beginner topics available - skipping blockchain-basics challenges');
+      return;
+    }
 
     for (let i = 0; i < 10; i++) {
       // Stop if we already have 10 challenges to prevent duplicates
@@ -833,17 +1006,24 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
     }
 
     // Crypto Security (Intermediate) - 50 challenges
-    const intermediateTopics = [
-      ['Private Key', 'Public Key', 'Digital Signature', 'Hash Function', 'Encryption', 'Decryption'],
-      ['Seed Phrase', '2FA', 'Hardware Wallet', 'Multi-Signature', 'Cold Storage', 'Hot Wallet'],
-      ['SHA-256', 'ECDSA', 'RSA', 'AES', 'Merkle Tree', 'Proof of Work'],
-      ['Phishing', 'Malware', 'Social Engineering', 'Brute Force', 'Dictionary Attack', 'Key Logger'],
-      ['SSL/TLS', 'VPN', 'Tor', 'Zero Knowledge', 'Ring Signature', 'Stealth Address']
-    ];
+    if (!intermediateTopics || intermediateTopics.length === 0 || intermediateTopics.every(topic => !topic || topic.length === 0)) {
+      intermediateTopics = [
+        ['Private Key', 'Public Key', 'Digital Signature', 'Hash Function', 'Encryption', 'Decryption'],
+        ['Seed Phrase', '2FA', 'Hardware Wallet', 'Multi-Signature', 'Cold Storage', 'Hot Wallet'],
+        ['SHA-256', 'ECDSA', 'RSA', 'AES', 'Merkle Tree', 'Proof of Work'],
+        ['Phishing', 'Malware', 'Social Engineering', 'Brute Force', 'Dictionary Attack', 'Key Logger'],
+        ['SSL/TLS', 'VPN', 'Tor', 'Zero Knowledge', 'Ring Signature', 'Stealth Address']
+      ];
+      console.log('🔄 Using hardcoded intermediate topics as fallback');
+    }
 
-    for (let i = 0; i < 50; i++) {
-      const topicIndex = i % intermediateTopics.length;
-      const items = intermediateTopics[topicIndex];
+    // Ensure we have valid intermediate topics before processing
+    if (!intermediateTopics || !Array.isArray(intermediateTopics) || intermediateTopics.length === 0) {
+      console.warn('⚠️ No intermediate topics available - skipping crypto-security challenges');
+    } else {
+      for (let i = 0; i < 50; i++) {
+        const topicIndex = i % intermediateTopics.length;
+        const items = intermediateTopics[topicIndex];
       // Only provide 3 items for 3 drop zones
       const correctItems = [items[0], items[1], items[2]]; // 3 correct answers
       const wrongItems = [items[3], items[4]]; // 2 wrong answers
@@ -868,20 +1048,28 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
           ]
         }
       });
+      }
     }
 
     // DeFi Explorer (Advanced) - 50 challenges
-    const advancedTopics = [
-      ['Uniswap', 'Compound', 'MakerDAO', 'Aave', 'Curve', 'SushiSwap'],
-      ['Liquidity Pool', 'Staking', 'LP Tokens', 'Yield Farming', 'Impermanent Loss', 'APY'],
-      ['DEX', 'AMM', 'Order Book', 'Slippage', 'Front Running', 'MEV'],
-      ['Flash Loan', 'Arbitrage', 'Liquidation', 'Collateral', 'Over-collateralized', 'Under-collateralized'],
-      ['Governance Token', 'DAO', 'Proposal', 'Voting', 'Treasury', 'Protocol Fee']
-    ];
+    if (!advancedTopics || advancedTopics.length === 0 || advancedTopics.every(topic => !topic || topic.length === 0)) {
+      advancedTopics = [
+        ['Uniswap', 'Compound', 'MakerDAO', 'Aave', 'Curve', 'SushiSwap'],
+        ['Liquidity Pool', 'Staking', 'LP Tokens', 'Yield Farming', 'Impermanent Loss', 'APY'],
+        ['DEX', 'AMM', 'Order Book', 'Slippage', 'Front Running', 'MEV'],
+        ['Flash Loan', 'Arbitrage', 'Liquidation', 'Collateral', 'Over-collateralized', 'Under-collateralized'],
+        ['Governance Token', 'DAO', 'Proposal', 'Voting', 'Treasury', 'Protocol Fee']
+      ];
+      console.log('🔄 Using hardcoded advanced topics as fallback');
+    }
 
-    for (let i = 0; i < 50; i++) {
-      const topicIndex = i % advancedTopics.length;
-      const items = advancedTopics[topicIndex];
+    // Ensure we have valid advanced topics before processing
+    if (!advancedTopics || !Array.isArray(advancedTopics) || advancedTopics.length === 0) {
+      console.warn('⚠️ No advanced topics available - skipping defi-explorer challenges');
+    } else {
+      for (let i = 0; i < 50; i++) {
+        const topicIndex = i % advancedTopics.length;
+        const items = advancedTopics[topicIndex];
       // Only provide 3 items for 3 drop zones
       const correctItems = [items[0], items[1], items[2]]; // 3 correct answers
       const wrongItems = [items[3], items[4]]; // 2 wrong answers
@@ -906,20 +1094,28 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
           ]
         }
       });
+      }
     }
 
     // Smart Contracts (Expert) - 50 challenges
-    const expertTopics = [
-      ['Solidity', 'Gas', 'ABI', 'Bytecode', 'Remix', 'Truffle'],
-      ['Reentrancy Guard', 'Access Control', 'Overflow Protection', 'Audit', 'Formal Verification', 'Bug Bounty'],
-      ['ERC-20', 'ERC-721', 'ERC-1155', 'Interface', 'Abstract Contract', 'Library'],
-      ['Proxy Pattern', 'Diamond Pattern', 'Factory Pattern', 'Singleton', 'Registry', 'Upgrade'],
-      ['Chainlink', 'Oracle', 'Price Feed', 'VRF', 'Automation', 'Cross-chain']
-    ];
+    if (!expertTopics || expertTopics.length === 0 || expertTopics.every(topic => !topic || topic.length === 0)) {
+      expertTopics = [
+        ['Solidity', 'Gas', 'ABI', 'Bytecode', 'Remix', 'Truffle'],
+        ['Reentrancy Guard', 'Access Control', 'Overflow Protection', 'Audit', 'Formal Verification', 'Bug Bounty'],
+        ['ERC-20', 'ERC-721', 'ERC-1155', 'Interface', 'Abstract Contract', 'Library'],
+        ['Proxy Pattern', 'Diamond Pattern', 'Factory Pattern', 'Singleton', 'Registry', 'Upgrade'],
+        ['Chainlink', 'Oracle', 'Price Feed', 'VRF', 'Automation', 'Cross-chain']
+      ];
+      console.log('🔄 Using hardcoded expert topics as fallback');
+    }
 
-    for (let i = 0; i < 50; i++) {
-      const topicIndex = i % expertTopics.length;
-      const items = expertTopics[topicIndex];
+    // Ensure we have valid expert topics before processing
+    if (!expertTopics || !Array.isArray(expertTopics) || expertTopics.length === 0) {
+      console.warn('⚠️ No expert topics available - skipping smart-contracts challenges');
+    } else {
+      for (let i = 0; i < 50; i++) {
+        const topicIndex = i % expertTopics.length;
+        const items = expertTopics[topicIndex];
       // Only provide 3 items for 3 drop zones
       const correctItems = [items[0], items[1], items[2]]; // 3 correct answers
       const wrongItems = [items[3], items[4]]; // 2 wrong answers
@@ -944,11 +1140,12 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
           ]
         }
       });
+      }
     }
   };
 
-  // Generate all challenges only once
-  if (challengeSets['blockchain-basics'].challenges.length === 0) {
+  // Generate all challenges only once, but wait for database data to load
+  if (!isLoading && databaseData && challengeSets['blockchain-basics'].challenges.length === 0) {
     generateChallenges();
     // Ensure blockchain-basics has exactly 10 challenges
     challengeSets['blockchain-basics'].challenges = challengeSets['blockchain-basics'].challenges.slice(0, 10);
@@ -1185,10 +1382,15 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
         const bonusXP = Math.round(accuracyRatio * 50);
         setPlayerXP(prev => prev + bonusXP);
         
-        setUserProgress(prev => ({
-          ...prev,
-          completedNodes: [...prev.completedNodes, questCompletedKey]
-        }));
+        setUserProgress(prev => {
+          const newCompletedNodes = [...prev.completedNodes, questCompletedKey];
+          console.log(`🔓 Quest completion key saved: "${questCompletedKey}"`);
+          console.log(`📝 All completed nodes:`, newCompletedNodes);
+          return {
+            ...prev,
+            completedNodes: newCompletedNodes
+          };
+        });
 
         // Points already awarded in final challenge section above - no additional points needed here
         console.log('🎉 Quest completion bonus XP awarded, points already tracked per challenge');
@@ -1277,16 +1479,35 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
     const newSelectionCount = selectionsMade + 1;
     const totalDropZones = currentChallenge.dropZones.length;
     
+    // Secure answer validation using hashes
+    let isCorrectAnswer = false;
+    
+    if (zone) {
+      if (zone.acceptedAnswerHashes && zone.acceptedAnswerHashes.length > 0) {
+        // Use secure hash-based validation
+        const questionId = currentChallenge.id || `${activeQuest?.id || 'unknown'}_q${currentChallengeIndex + 1}`;
+        isCorrectAnswer = zone.acceptedAnswerHashes.some(hash => 
+          validateAnswer(draggedItem, questionId + '_' + zoneId, hash)
+        );
+      } else if (zone.accepts) {
+        // Fallback to legacy validation (less secure)
+        isCorrectAnswer = zone.accepts.includes(draggedItem);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('🔓 Using legacy validation - consider upgrading to hash-based validation');
+        }
+      }
+    }
+    
     // Always fill the space with the item
     setDropZoneContents(prev => ({
       ...prev,
-      [zoneId]: [{ item: draggedItem, isCorrect: zone && zone.accepts.includes(draggedItem) }]
+      [zoneId]: [{ item: draggedItem, isCorrect: isCorrectAnswer }]
     }));
     
     // Mark item as used
     setUsedItems(prev => [...prev, draggedItem]);
     
-    if (zone && zone.accepts.includes(draggedItem)) {
+    if (isCorrectAnswer) {
       // Track correct answer
       setCorrectAnswers(prev => prev + 1);
       
@@ -1349,6 +1570,19 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
   };
 
   const totalGamingHubPoints = calculateGamingHubPoints();
+
+  // Show loading state while fetching database data
+  if (isLoading) {
+    return (
+      <GameContainer>
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <h2>Loading Gaming Hub...</h2>
+          <LoadingSpinner />
+          <p>Fetching the latest challenges...</p>
+        </div>
+      </GameContainer>
+    );
+  }
 
   return (
     <GameContainer>
