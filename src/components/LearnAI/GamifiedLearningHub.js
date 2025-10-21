@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { validateAnswer, obfuscateDataForLogging } from '../../utils/answerSecurity';
+import walletDatabaseIntegration from '../../services/walletDatabaseIntegration';
 
 // Secure database service for fetching gaming hub questions
 const fetchGamingHubData = async () => {
@@ -763,6 +764,23 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
     
     loadDatabaseData();
   }, []);
+
+  // Initialize wallet-database integration
+  useEffect(() => {
+    const initializeWalletIntegration = async () => {
+      try {
+        // Initialize the wallet-database integration with the addPoints function
+        await walletDatabaseIntegration.initialize(addPoints);
+        console.log('🎮 Gaming Hub: Wallet-database integration initialized');
+      } catch (error) {
+        console.error('❌ Gaming Hub: Failed to initialize wallet integration:', error);
+      }
+    };
+
+    if (addPoints) {
+      initializeWalletIntegration();
+    }
+  }, [addPoints]);
 
   // Load game progress on component mount
   useEffect(() => {

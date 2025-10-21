@@ -1,0 +1,18 @@
+{
+  "contractAddress": "0x99f67B7D92e278f6FE11e0D987c220355B2F015e",
+  "transactionHash": "0x349f7c6d7736a64c1be387fda47a8d2d8273d80eb440a6738a6b465e58bdb4d3",
+  "tokenName": "DevTY",
+  "tokenSymbol": "DEVTY",
+  "decimals": 18,
+  "initialSupply": "10000",
+  "ownerAddress": "0x519Aed31035cF4cdfd06AeFc586A3bE081E999CC",
+  "network": "BSC Mainnet",
+  "chainId": 56,
+  "deployedAt": "2025-10-18T18:56:35.745Z",
+  "explorerUrl": "https://bscscan.com/address/0x99f67B7D92e278f6FE11e0D987c220355B2F015e",
+  "description": "Token deployed via C-Cube platform",
+  "website": "",
+  "twitter": "",
+  "telegram": "",
+  "tokenImage": null
+}

@@ -1,0 +1,42 @@
+{
+  "metadata": {
+    "name": "Secure Story Mode Fallback Data",
+    "version": "1.0.0",
+    "description": "Local fallback data for Story Mode when database is unavailable",
+    "type": "fallback",
+    "securityLevel": "hash-validated"
+  },
+  "storyMode": {
+    "chapters": [
+      {
+        "title": "🏗️ Blockchain Fundamentals",
+        "description": "Master the core concepts of blockchain technology",
+        "questions": [
+          {
+            "content": "Welcome to the blockchain revolution! Let's start with the basics.",
+            "dialogue": {
+              "speaker": "Blockchain Guide",
+              "text": "What is the primary purpose of blockchain technology?"
+            },
+            "choices": [
+              "Store data in a central database",
+              "Create a decentralized, immutable ledger",
+              "Speed up internet connections",
+              "Replace traditional computers"
+            ],
+            "correctChoiceHash": "example_hash_1",
+            "explanation": {
+              "correctAnswer": "Create a decentralized, immutable ledger",
+              "details": "Blockchain creates decentralized, immutable ledgers for secure transactions.",
+              "keyPoints": [
+                "Decentralization eliminates intermediaries",
+                "Immutability ensures data integrity",
+                "Consensus enables network agreement"
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
