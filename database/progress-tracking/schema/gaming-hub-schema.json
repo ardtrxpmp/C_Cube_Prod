@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Gaming Hub Progress Schema",
+  "description": "Schema for wallet-based gaming hub progress tracking",
+  "type": "object",
+  "required": ["walletAddress", "lastUpdated", "questProgress", "overallStats"],
+  "properties": {
+    "walletAddress": {
+      "type": "string",
+      "pattern": "^0x[a-fA-F0-9]{40}$",
+      "description": "Ethereum wallet address"
+    },
+    "lastUpdated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO timestamp of last progress update"
+    },
+    "questProgress": {
+      "type": "object",
+      "description": "Progress for each quest",
+      "patternProperties": {
+        "^[a-z-]+$": {
+          "type": "object",
+          "required": ["questStatus", "currentChallengeIndex", "totalChallenges", "completedChallenges", "attemptedQuestions"],
+          "properties": {
+            "questStatus": {
+              "type": "string",
+              "enum": ["not-started", "in-progress", "completed"],
+              "description": "Current status of the quest"
+            },
+            "currentChallengeIndex": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Index of current challenge (0-based)"
+            },
+            "totalChallenges": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Total number of challenges in quest"
+            },
+            "completedChallenges": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "description": "Array of completed challenge indices"
+            },
+            "attemptedQuestions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["challengeIndex", "questionId", "attempts", "lastAttempt", "isCorrect"],
+                "properties": {
+                  "challengeIndex": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "questionId": {
+                    "type": "string"
+                  },
+                  "attempts": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "lastAttempt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "isCorrect": {
+                    "type": "boolean"
+                  },
+                  "userAnswers": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "correctAnswers": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "overallStats": {
+      "type": "object",
+      "required": ["totalQuestionsAttempted", "totalQuestionsCorrect", "accuracyRate", "totalPlayTime", "lastPlaySession"],
+      "properties": {
+        "totalQuestionsAttempted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalQuestionsCorrect": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "accuracyRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "totalPlayTime": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total play time in seconds"
+        },
+        "lastPlaySession": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

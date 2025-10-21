@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes, css } from 'styled-components';
+import { useWallet } from '../../context/WalletContext';
+import progressTracker from '../../services/progressTracker';
 import { validateAnswer, obfuscateDataForLogging } from '../../utils/answerSecurity';
 import walletDatabaseIntegration from '../../services/walletDatabaseIntegration';
 
@@ -126,6 +128,11 @@ const spinLoader = keyframes`
   100% { transform: rotate(360deg); }
 `;
 
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
 const LoadingSpinner = styled.div`
   border: 4px solid #f3f3f3;
   border-top: 4px solid #4f46e5;
@@ -143,6 +150,11 @@ const GameContainer = styled.div`
   position: relative;
   overflow: auto;
   padding: 65px 20px 20px; /* Increased top padding by 5px more */
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 const GameHeader = styled.div`
@@ -734,6 +746,10 @@ const FeedbackMessage = styled.div`
 `;
 
 const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
+  // Wallet integration
+  const { walletAddress, isConnected } = useWallet();
+  
+  // Existing state
   const [activeQuest, setActiveQuest] = useState(null);
   const [playerLevel, setPlayerLevel] = useState(1);
   const [databaseData, setDatabaseData] = useState(null);
@@ -752,6 +768,10 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationData, setCelebrationData] = useState(null);
   const [floatingEmojis, setFloatingEmojis] = useState([]);
+  
+  // Progress tracking state
+  const [walletProgress, setWalletProgress] = useState(null);
+  const [isLoadingProgress, setIsLoadingProgress] = useState(false);
 
   // Load database data on component mount
   useEffect(() => {
@@ -764,6 +784,99 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
     
     loadDatabaseData();
   }, []);
+
+  // Load wallet-based progress when wallet connects
+  useEffect(() => {
+    const loadWalletProgress = async () => {
+      if (!walletAddress) {
+        console.log('🔍 No wallet connected, using local session storage');
+        setWalletProgress(null);
+        return;
+      }
+
+      try {
+        setIsLoadingProgress(true);
+        console.log('🔍 Loading progress for wallet:', walletAddress);
+        
+        const progress = await progressTracker.getGamingHubProgress(walletAddress);
+        setWalletProgress(progress);
+        
+        console.log('✅ Wallet progress loaded:', progress);
+        
+        // Show feedback to user
+        if (progress.overallStats.totalQuestionsAttempted > 0) {
+          setFeedback({
+            type: 'success',
+            message: `🎉 Welcome back! Found ${progress.overallStats.totalQuestionsAttempted} questions attempted with ${progress.overallStats.accuracyRate.toFixed(1)}% accuracy!`
+          });
+          setTimeout(() => setFeedback(null), 4000);
+        } else {
+          setFeedback({
+            type: 'success',
+            message: `🎮 Welcome! Starting your blockchain learning journey with wallet ${walletAddress.substring(0, 6)}...${walletAddress.substring(-4)}`
+          });
+          setTimeout(() => setFeedback(null), 3000);
+        }
+        
+      } catch (error) {
+        console.error('❌ Error loading wallet progress:', error);
+        setFeedback({
+          type: 'error',
+          message: '⚠️ Could not load progress from wallet. Using local session instead.'
+        });
+        setTimeout(() => setFeedback(null), 3000);
+      } finally {
+        setIsLoadingProgress(false);
+      }
+    };
+
+    loadWalletProgress();
+  }, [walletAddress]);
+
+  // Auto-resume quest progress when wallet progress is loaded
+  useEffect(() => {
+    if (walletProgress && !activeQuest) {
+      const resumeWalletProgress = async () => {
+        // Find the quest with the most recent progress
+        let mostRecentQuest = null;
+        let mostRecentTime = 0;
+        
+        Object.entries(walletProgress.questProgress).forEach(([questId, questData]) => {
+          if (questData.questStatus === 'in-progress' && questData.attemptedQuestions.length > 0) {
+            const lastAttemptTime = new Date(questData.attemptedQuestions[questData.attemptedQuestions.length - 1].lastAttempt).getTime();
+            if (lastAttemptTime > mostRecentTime) {
+              mostRecentTime = lastAttemptTime;
+              mostRecentQuest = { questId, questData };
+            }
+          }
+        });
+        
+        if (mostRecentQuest) {
+          const quest = quests.find(q => q.id === mostRecentQuest.questId);
+          if (quest && !quest.locked) {
+            console.log('🔄 Auto-resuming quest:', quest.title);
+            
+            // Get next uncompleted challenge
+            const resumePoint = await progressTracker.getNextUncompletedChallenge(
+              walletAddress, 
+              mostRecentQuest.questId
+            );
+            
+            setActiveQuest(quest);
+            setCurrentChallengeIndex(resumePoint.challengeIndex);
+            
+            setFeedback({
+              type: 'success',
+              message: `🎯 Resuming "${quest.title}" from challenge ${resumePoint.challengeIndex + 1}`
+            });
+            setTimeout(() => setFeedback(null), 3000);
+          }
+        }
+      };
+      
+      resumeWalletProgress();
+    }
+  }, [walletProgress, activeQuest, walletAddress]);
 
   // Initialize wallet-database integration
   useEffect(() => {
@@ -973,17 +1086,17 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
         [];
     }
     
-    // // Fallback to hardcoded data if database data not available - COMMENTED OUT
-    // if (!beginnerTopics || beginnerTopics.length === 0 || beginnerTopics.every(topic => !topic || topic.length === 0)) {
-    //   beginnerTopics = [
-    //     ['Block', 'Transaction', 'Hash', 'Chain', 'Node', 'Network'],
-    //     ['Bitcoin', 'Ethereum', 'Litecoin', 'Dogecoin', 'Monero', 'Ripple'],
-    //     ['Wallet', 'Address', 'Balance', 'Send', 'Receive', 'Fee'],
-    //     ['Mining', 'Miner', 'Reward', 'Halving', 'Difficulty', 'Pool'],
-    //     ['Peer-to-Peer', 'Decentralized', 'Distributed', 'Central', 'Authority', 'Trust']
-    //   ];
-    //   console.log('🔄 Using hardcoded beginner topics as fallback');
-    // }
+    // Fallback to hardcoded data if database data not available
+    if (!beginnerTopics || beginnerTopics.length === 0 || beginnerTopics.every(topic => !topic || topic.length === 0)) {
+      beginnerTopics = [
+        ['Block', 'Transaction', 'Hash', 'Chain', 'Node', 'Network'],
+        ['Bitcoin', 'Ethereum', 'Litecoin', 'Dogecoin', 'Monero', 'Ripple'],
+        ['Wallet', 'Address', 'Balance', 'Send', 'Receive', 'Fee'],
+        ['Mining', 'Miner', 'Reward', 'Halving', 'Difficulty', 'Pool'],
+        ['Peer-to-Peer', 'Decentralized', 'Distributed', 'Central', 'Authority', 'Trust']
+      ];
+      console.log('🔄 Using hardcoded beginner topics as fallback');
+    }
 
     // Ensure we have valid topic arrays before processing
     if (!beginnerTopics || !Array.isArray(beginnerTopics) || beginnerTopics.length === 0) {
@@ -1024,16 +1137,16 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
     }
 
     // Crypto Security (Intermediate) - 50 challenges
-    // if (!intermediateTopics || intermediateTopics.length === 0 || intermediateTopics.every(topic => !topic || topic.length === 0)) {
-    //   intermediateTopics = [
-    //     ['Private Key', 'Public Key', 'Digital Signature', 'Hash Function', 'Encryption', 'Decryption'],
-    //     ['Seed Phrase', '2FA', 'Hardware Wallet', 'Multi-Signature', 'Cold Storage', 'Hot Wallet'],
-    //     ['SHA-256', 'ECDSA', 'RSA', 'AES', 'Merkle Tree', 'Proof of Work'],
-    //     ['Phishing', 'Malware', 'Social Engineering', 'Brute Force', 'Dictionary Attack', 'Key Logger'],
-    //     ['SSL/TLS', 'VPN', 'Tor', 'Zero Knowledge', 'Ring Signature', 'Stealth Address']
-    //   ];
-    //   console.log('🔄 Using hardcoded intermediate topics as fallback');
-    // }
+    if (!intermediateTopics || intermediateTopics.length === 0 || intermediateTopics.every(topic => !topic || topic.length === 0)) {
+      intermediateTopics = [
+        ['Private Key', 'Public Key', 'Digital Signature', 'Hash Function', 'Encryption', 'Decryption'],
+        ['Seed Phrase', '2FA', 'Hardware Wallet', 'Multi-Signature', 'Cold Storage', 'Hot Wallet'],
+        ['SHA-256', 'ECDSA', 'RSA', 'AES', 'Merkle Tree', 'Proof of Work'],
+        ['Phishing', 'Malware', 'Social Engineering', 'Brute Force', 'Dictionary Attack', 'Key Logger'],
+        ['SSL/TLS', 'VPN', 'Tor', 'Zero Knowledge', 'Ring Signature', 'Stealth Address']
+      ];
+      console.log('🔄 Using hardcoded intermediate topics as fallback');
+    }
 
     // Ensure we have valid intermediate topics before processing
     if (!intermediateTopics || !Array.isArray(intermediateTopics) || intermediateTopics.length === 0) {
@@ -1070,16 +1183,16 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
     }
 
     // DeFi Explorer (Advanced) - 50 challenges
-    // if (!advancedTopics || advancedTopics.length === 0 || advancedTopics.every(topic => !topic || topic.length === 0)) {
-    //   advancedTopics = [
-    //     ['Uniswap', 'Compound', 'MakerDAO', 'Aave', 'Curve', 'SushiSwap'],
-    //     ['Liquidity Pool', 'Staking', 'LP Tokens', 'Yield Farming', 'Impermanent Loss', 'APY'],
-    //     ['DEX', 'AMM', 'Order Book', 'Slippage', 'Front Running', 'MEV'],
-    //     ['Flash Loan', 'Arbitrage', 'Liquidation', 'Collateral', 'Over-collateralized', 'Under-collateralized'],
-    //     ['Governance Token', 'DAO', 'Proposal', 'Voting', 'Treasury', 'Protocol Fee']
-    //   ];
-    //   console.log('🔄 Using hardcoded advanced topics as fallback');
-    // }
+    if (!advancedTopics || advancedTopics.length === 0 || advancedTopics.every(topic => !topic || topic.length === 0)) {
+      advancedTopics = [
+        ['Uniswap', 'Compound', 'MakerDAO', 'Aave', 'Curve', 'SushiSwap'],
+        ['Liquidity Pool', 'Staking', 'LP Tokens', 'Yield Farming', 'Impermanent Loss', 'APY'],
+        ['DEX', 'AMM', 'Order Book', 'Slippage', 'Front Running', 'MEV'],
+        ['Flash Loan', 'Arbitrage', 'Liquidation', 'Collateral', 'Over-collateralized', 'Under-collateralized'],
+        ['Governance Token', 'DAO', 'Proposal', 'Voting', 'Treasury', 'Protocol Fee']
+      ];
+      console.log('🔄 Using hardcoded advanced topics as fallback');
+    }
 
     // Ensure we have valid advanced topics before processing
     if (!advancedTopics || !Array.isArray(advancedTopics) || advancedTopics.length === 0) {
@@ -1116,16 +1229,16 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
     }
 
     // Smart Contracts (Expert) - 50 challenges
-    // if (!expertTopics || expertTopics.length === 0 || expertTopics.every(topic => !topic || topic.length === 0)) {
-    //   expertTopics = [
-    //     ['Solidity', 'Gas', 'ABI', 'Bytecode', 'Remix', 'Truffle'],
-    //     ['Reentrancy Guard', 'Access Control', 'Overflow Protection', 'Audit', 'Formal Verification', 'Bug Bounty'],
-    //     ['ERC-20', 'ERC-721', 'ERC-1155', 'Interface', 'Abstract Contract', 'Library'],
-    //     ['Proxy Pattern', 'Diamond Pattern', 'Factory Pattern', 'Singleton', 'Registry', 'Upgrade'],
-    //     ['Chainlink', 'Oracle', 'Price Feed', 'VRF', 'Automation', 'Cross-chain']
-    //   ];
-    //   console.log('🔄 Using hardcoded expert topics as fallback');
-    // }
+    if (!expertTopics || expertTopics.length === 0 || expertTopics.every(topic => !topic || topic.length === 0)) {
+      expertTopics = [
+        ['Solidity', 'Gas', 'ABI', 'Bytecode', 'Remix', 'Truffle'],
+        ['Reentrancy Guard', 'Access Control', 'Overflow Protection', 'Audit', 'Formal Verification', 'Bug Bounty'],
+        ['ERC-20', 'ERC-721', 'ERC-1155', 'Interface', 'Abstract Contract', 'Library'],
+        ['Proxy Pattern', 'Diamond Pattern', 'Factory Pattern', 'Singleton', 'Registry', 'Upgrade'],
+        ['Chainlink', 'Oracle', 'Price Feed', 'VRF', 'Automation', 'Cross-chain']
+      ];
+      console.log('🔄 Using hardcoded expert topics as fallback');
+    }
 
     // Ensure we have valid expert topics before processing
     if (!expertTopics || !Array.isArray(expertTopics) || expertTopics.length === 0) {
@@ -1180,7 +1293,7 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
 
   const currentChallenge = challenges[currentChallengeIndex];
 
-  const handleQuestClick = (quest) => {
+  const handleQuestClick = async (quest) => {
     // Prevent clicking on locked quests
     if (quest.locked) {
       const prerequisiteQuest = quests.find(q => q.id === quest.prerequisite);
@@ -1193,29 +1306,53 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
     }
 
     console.log('🎯 Quest clicked:', quest.title);
+    setActiveQuest(quest);
     
-    // Check if we have saved progress for this quest
-    const savedGameProgress = sessionStorage.getItem('ccube_game_progress');
+    // Check wallet progress first, then fallback to session storage
     let shouldResetToStart = true;
+    let resumePoint = { challengeIndex: 0, isFirstTime: true };
     
-    if (savedGameProgress) {
+    if (walletAddress && walletProgress) {
       try {
-        const gameData = JSON.parse(savedGameProgress);
-        // If we have saved progress for this exact quest, don't reset
-        if (gameData.activeQuest && gameData.activeQuest.id === quest.id) {
-          console.log('📥 Resuming saved progress for quest:', quest.title);
+        console.log('🔍 Checking wallet progress for quest:', quest.id);
+        resumePoint = await progressTracker.getNextUncompletedChallenge(walletAddress, quest.id);
+        
+        if (!resumePoint.isFirstTime) {
+          console.log('📥 Resuming wallet progress for quest:', quest.title, 'Challenge:', resumePoint.challengeIndex + 1);
           shouldResetToStart = false;
+          
+          setFeedback({
+            type: 'success',
+            message: `📚 Resuming from challenge ${resumePoint.challengeIndex + 1} of ${quest.title}`
+          });
+          setTimeout(() => setFeedback(null), 3000);
         }
-      } catch (err) {
-        console.error('Error checking saved progress:', err);
+      } catch (error) {
+        console.error('❌ Error checking wallet progress:', error);
       }
     }
-
-    setActiveQuest(quest);
+    
+    // Fallback to session storage if no wallet progress
+    if (shouldResetToStart && !walletAddress) {
+      const savedGameProgress = sessionStorage.getItem('ccube_game_progress');
+      
+      if (savedGameProgress) {
+        try {
+          const gameData = JSON.parse(savedGameProgress);
+          if (gameData.activeQuest && gameData.activeQuest.id === quest.id) {
+            console.log('📥 Resuming session progress for quest:', quest.title);
+            shouldResetToStart = false;
+            resumePoint.challengeIndex = gameData.currentChallengeIndex || 0;
+          }
+        } catch (err) {
+          console.error('Error checking saved progress:', err);
+        }
+      }
+    }
     
     if (shouldResetToStart) {
       console.log('🔄 Starting fresh quest:', quest.title);
-      // Reset challenge to start from beginning of new quest
+      // Reset to start from beginning
       setCurrentChallengeIndex(0);
       setDropZoneContents({});
       setSelectionsMade(0);
@@ -1223,24 +1360,41 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
       setUsedItems([]);
       setCorrectAnswers(0);
       setTotalQuestions(0);
-      
-      // Force reset XP to ensure no carryover from previous sessions
       setPlayerXP(0);
       setPlayerLevel(1);
       
-      // Only award XP and mark as started if this quest hasn't been started before
+      // Mark quest as started for session storage compatibility
       const questStartedKey = `quest-started-${quest.id}`;
       const hasBeenStarted = userProgress.completedNodes.includes(questStartedKey);
       
       if (!quest.completed && !hasBeenStarted) {
-        // Mark quest as started (no XP reward for just starting)
         setUserProgress(prev => ({
           ...prev,
           completedNodes: [...prev.completedNodes, questStartedKey]
         }));
       }
+      
+      if (walletAddress) {
+        setFeedback({
+          type: 'success',
+          message: `🎮 Starting ${quest.title} - progress will be saved to your wallet!`
+        });
+        setTimeout(() => setFeedback(null), 3000);
+      }
     } else {
-      console.log('✅ Continuing saved quest progress');
+      console.log('✅ Continuing saved quest progress from challenge:', resumePoint.challengeIndex + 1);
+      // Resume from saved progress
+      setCurrentChallengeIndex(resumePoint.challengeIndex);
+      setDropZoneContents({});
+      setSelectionsMade(0);
+      setChallengeComplete(false);
+      setUsedItems([]);
+      
+      // Restore some session state if available
+      if (resumePoint.attemptedQuestions) {
+        setCorrectAnswers(resumePoint.attemptedQuestions.filter(q => q.isCorrect).length);
+        setTotalQuestions(resumePoint.attemptedQuestions.length);
+      }
     }
   };
 
@@ -1547,6 +1701,42 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
     // Track total questions answered
     setTotalQuestions(prev => prev + 1);
     
+    // Save progress to wallet if connected
+    if (walletAddress && activeQuest) {
+      const saveProgressAsync = async () => {
+        try {
+          const questionId = `${activeQuest.id}-challenge-${currentChallengeIndex}-question-${zoneId}`;
+          const isChallengeComplete = newSelectionCount >= totalDropZones;
+          
+          await progressTracker.saveGamingHubProgress(
+            walletAddress,
+            activeQuest.id,
+            currentChallengeIndex,
+            {
+              questionId: questionId,
+              isCorrect: isCorrectAnswer,
+              userAnswer: draggedItem,
+              correctAnswers: zone.accepts || [],
+              challengeComplete: isChallengeComplete,
+              timestamp: new Date().toISOString()
+            }
+          );
+          
+          console.log('💾 Progress saved to wallet:', {
+            quest: activeQuest.id,
+            challenge: currentChallengeIndex,
+            question: zoneId,
+            correct: isCorrectAnswer
+          });
+          
+        } catch (error) {
+          console.error('❌ Error saving progress to wallet:', error);
+        }
+      };
+      
+      saveProgressAsync();
+    }
+    
     // Update selections made
     setSelectionsMade(newSelectionCount);
     
@@ -1631,6 +1821,67 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
             <StatLabel>Quests Complete</StatLabel>
           </StatItem>
         </PlayerStats>
+        
+        {/* Wallet Progress Indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {isLoadingProgress && (
+            <div style={{ color: '#fbbf24', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ 
+                width: '16px', 
+                height: '16px', 
+                border: '2px solid transparent',
+                borderTop: '2px solid #fbbf24',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }}></div>
+              Loading Progress...
+            </div>
+          )}
+          
+          {walletAddress && walletProgress && (
+            <div style={{ 
+              background: 'rgba(16, 185, 129, 0.1)', 
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '8px',
+              padding: '8px 12px',
+              fontSize: '12px',
+              color: '#10b981',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span>💾</span>
+              <div>
+                <div style={{ fontWeight: 'bold' }}>
+                  Wallet: {walletAddress.substring(0, 6)}...{walletAddress.substring(-4)}
+                </div>
+                <div style={{ opacity: 0.8 }}>
+                  {walletProgress.overallStats.totalQuestionsAttempted} questions | {walletProgress.overallStats.accuracyRate.toFixed(1)}% accuracy
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {!walletAddress && (
+            <div style={{ 
+              background: 'rgba(245, 158, 11, 0.1)', 
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: '8px',
+              padding: '8px 12px',
+              fontSize: '12px',
+              color: '#fbbf24',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span>⚠️</span>
+              <div>
+                <div style={{ fontWeight: 'bold' }}>No Wallet Connected</div>
+                <div style={{ opacity: 0.8 }}>Progress saved locally only</div>
+              </div>
+            </div>
+          )}
+        </div>
       </GameHeader>
 
       <QuestBoard>
