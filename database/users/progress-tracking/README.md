@@ -5,7 +5,7 @@ This directory contains wallet-based progress tracking data for the C³ Cube lea
 ## Directory Structure
 
 ```
-progress-tracking/
+users/progress-tracking/
 ├── README.md                           # This documentation
 ├── gaming-hub/                         # Gaming Hub progress by wallet
 │   ├── 0x1234567890abcdef123456.json   # User gaming progress

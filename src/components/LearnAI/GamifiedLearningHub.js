@@ -1086,17 +1086,17 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
         [];
     }
     
-    // Fallback to hardcoded data if database data not available
-    if (!beginnerTopics || beginnerTopics.length === 0 || beginnerTopics.every(topic => !topic || topic.length === 0)) {
-      beginnerTopics = [
-        ['Block', 'Transaction', 'Hash', 'Chain', 'Node', 'Network'],
-        ['Bitcoin', 'Ethereum', 'Litecoin', 'Dogecoin', 'Monero', 'Ripple'],
-        ['Wallet', 'Address', 'Balance', 'Send', 'Receive', 'Fee'],
-        ['Mining', 'Miner', 'Reward', 'Halving', 'Difficulty', 'Pool'],
-        ['Peer-to-Peer', 'Decentralized', 'Distributed', 'Central', 'Authority', 'Trust']
-      ];
-      console.log('🔄 Using hardcoded beginner topics as fallback');
-    }
+    // // Fallback to hardcoded data if database data not available
+    // if (!beginnerTopics || beginnerTopics.length === 0 || beginnerTopics.every(topic => !topic || topic.length === 0)) {
+    //   beginnerTopics = [
+    //     ['Block', 'Transaction', 'Hash', 'Chain', 'Node', 'Network'],
+    //     ['Bitcoin', 'Ethereum', 'Litecoin', 'Dogecoin', 'Monero', 'Ripple'],
+    //     ['Wallet', 'Address', 'Balance', 'Send', 'Receive', 'Fee'],
+    //     ['Mining', 'Miner', 'Reward', 'Halving', 'Difficulty', 'Pool'],
+    //     ['Peer-to-Peer', 'Decentralized', 'Distributed', 'Central', 'Authority', 'Trust']
+    //   ];
+    //   console.log('🔄 Using hardcoded beginner topics as fallback');
+    // }
 
     // Ensure we have valid topic arrays before processing
     if (!beginnerTopics || !Array.isArray(beginnerTopics) || beginnerTopics.length === 0) {
@@ -1137,16 +1137,16 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
     }
 
     // Crypto Security (Intermediate) - 50 challenges
-    if (!intermediateTopics || intermediateTopics.length === 0 || intermediateTopics.every(topic => !topic || topic.length === 0)) {
-      intermediateTopics = [
-        ['Private Key', 'Public Key', 'Digital Signature', 'Hash Function', 'Encryption', 'Decryption'],
-        ['Seed Phrase', '2FA', 'Hardware Wallet', 'Multi-Signature', 'Cold Storage', 'Hot Wallet'],
-        ['SHA-256', 'ECDSA', 'RSA', 'AES', 'Merkle Tree', 'Proof of Work'],
-        ['Phishing', 'Malware', 'Social Engineering', 'Brute Force', 'Dictionary Attack', 'Key Logger'],
-        ['SSL/TLS', 'VPN', 'Tor', 'Zero Knowledge', 'Ring Signature', 'Stealth Address']
-      ];
-      console.log('🔄 Using hardcoded intermediate topics as fallback');
-    }
+    // if (!intermediateTopics || intermediateTopics.length === 0 || intermediateTopics.every(topic => !topic || topic.length === 0)) {
+    //   intermediateTopics = [
+    //     ['Private Key', 'Public Key', 'Digital Signature', 'Hash Function', 'Encryption', 'Decryption'],
+    //     ['Seed Phrase', '2FA', 'Hardware Wallet', 'Multi-Signature', 'Cold Storage', 'Hot Wallet'],
+    //     ['SHA-256', 'ECDSA', 'RSA', 'AES', 'Merkle Tree', 'Proof of Work'],
+    //     ['Phishing', 'Malware', 'Social Engineering', 'Brute Force', 'Dictionary Attack', 'Key Logger'],
+    //     ['SSL/TLS', 'VPN', 'Tor', 'Zero Knowledge', 'Ring Signature', 'Stealth Address']
+    //   ];
+    //   console.log('🔄 Using hardcoded intermediate topics as fallback');
+    // }
 
     // Ensure we have valid intermediate topics before processing
     if (!intermediateTopics || !Array.isArray(intermediateTopics) || intermediateTopics.length === 0) {
@@ -1183,16 +1183,16 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
     }
 
     // DeFi Explorer (Advanced) - 50 challenges
-    if (!advancedTopics || advancedTopics.length === 0 || advancedTopics.every(topic => !topic || topic.length === 0)) {
-      advancedTopics = [
-        ['Uniswap', 'Compound', 'MakerDAO', 'Aave', 'Curve', 'SushiSwap'],
-        ['Liquidity Pool', 'Staking', 'LP Tokens', 'Yield Farming', 'Impermanent Loss', 'APY'],
-        ['DEX', 'AMM', 'Order Book', 'Slippage', 'Front Running', 'MEV'],
-        ['Flash Loan', 'Arbitrage', 'Liquidation', 'Collateral', 'Over-collateralized', 'Under-collateralized'],
-        ['Governance Token', 'DAO', 'Proposal', 'Voting', 'Treasury', 'Protocol Fee']
-      ];
-      console.log('🔄 Using hardcoded advanced topics as fallback');
-    }
+    // if (!advancedTopics || advancedTopics.length === 0 || advancedTopics.every(topic => !topic || topic.length === 0)) {
+    //   advancedTopics = [
+    //     ['Uniswap', 'Compound', 'MakerDAO', 'Aave', 'Curve', 'SushiSwap'],
+    //     ['Liquidity Pool', 'Staking', 'LP Tokens', 'Yield Farming', 'Impermanent Loss', 'APY'],
+    //     ['DEX', 'AMM', 'Order Book', 'Slippage', 'Front Running', 'MEV'],
+    //     ['Flash Loan', 'Arbitrage', 'Liquidation', 'Collateral', 'Over-collateralized', 'Under-collateralized'],
+    //     ['Governance Token', 'DAO', 'Proposal', 'Voting', 'Treasury', 'Protocol Fee']
+    //   ];
+    //   console.log('🔄 Using hardcoded advanced topics as fallback');
+    // }
 
     // Ensure we have valid advanced topics before processing
     if (!advancedTopics || !Array.isArray(advancedTopics) || advancedTopics.length === 0) {
@@ -1229,16 +1229,16 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
     }
 
     // Smart Contracts (Expert) - 50 challenges
-    if (!expertTopics || expertTopics.length === 0 || expertTopics.every(topic => !topic || topic.length === 0)) {
-      expertTopics = [
-        ['Solidity', 'Gas', 'ABI', 'Bytecode', 'Remix', 'Truffle'],
-        ['Reentrancy Guard', 'Access Control', 'Overflow Protection', 'Audit', 'Formal Verification', 'Bug Bounty'],
-        ['ERC-20', 'ERC-721', 'ERC-1155', 'Interface', 'Abstract Contract', 'Library'],
-        ['Proxy Pattern', 'Diamond Pattern', 'Factory Pattern', 'Singleton', 'Registry', 'Upgrade'],
-        ['Chainlink', 'Oracle', 'Price Feed', 'VRF', 'Automation', 'Cross-chain']
-      ];
-      console.log('🔄 Using hardcoded expert topics as fallback');
-    }
+    // if (!expertTopics || expertTopics.length === 0 || expertTopics.every(topic => !topic || topic.length === 0)) {
+    //   expertTopics = [
+    //     ['Solidity', 'Gas', 'ABI', 'Bytecode', 'Remix', 'Truffle'],
+    //     ['Reentrancy Guard', 'Access Control', 'Overflow Protection', 'Audit', 'Formal Verification', 'Bug Bounty'],
+    //     ['ERC-20', 'ERC-721', 'ERC-1155', 'Interface', 'Abstract Contract', 'Library'],
+    //     ['Proxy Pattern', 'Diamond Pattern', 'Factory Pattern', 'Singleton', 'Registry', 'Upgrade'],
+    //     ['Chainlink', 'Oracle', 'Price Feed', 'VRF', 'Automation', 'Cross-chain']
+    //   ];
+    //   console.log('🔄 Using hardcoded expert topics as fallback');
+    // }
 
     // Ensure we have valid expert topics before processing
     if (!expertTopics || !Array.isArray(expertTopics) || expertTopics.length === 0) {

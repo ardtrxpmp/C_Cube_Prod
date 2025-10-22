@@ -1,0 +1,24 @@
+{
+  "totalUsers": 3,
+  "lastUpdated": "2025-10-22T15:43:47.435Z",
+  "userSummaries": [
+    {
+      "walletAddress": "0x1234567890abcdef1234567890abcdef12345678",
+      "totalQuestions": 15,
+      "accuracy": 92,
+      "status": "beginner"
+    },
+    {
+      "walletAddress": "0x7890abcdef1234567890abcdef1234567890abcd",
+      "totalQuestions": 11,
+      "accuracy": 70,
+      "status": "intermediate"
+    },
+    {
+      "walletAddress": "0xabcdef1234567890abcdef1234567890abcdef12",
+      "totalQuestions": 5,
+      "accuracy": 82,
+      "status": "intermediate"
+    }
+  ]
+}

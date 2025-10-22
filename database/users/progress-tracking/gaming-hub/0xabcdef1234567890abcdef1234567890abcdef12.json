@@ -1,0 +1,158 @@
+{
+  "walletAddress": "0xabcdef1234567890abcdef1234567890abcdef12",
+  "lastUpdated": "2025-10-22T15:43:47.435Z",
+  "createdAt": "2025-10-22T15:43:47.435Z",
+  "overallStats": {
+    "totalQuestionsAttempted": 15,
+    "totalCorrectAnswers": 13,
+    "accuracyRate": 88,
+    "totalTimeSpent": 3162,
+    "averageTimePerQuestion": 38,
+    "currentStreak": 4,
+    "longestStreak": 11
+  },
+  "questProgress": {
+    "blockchain-basics": {
+      "questId": "blockchain-basics",
+      "questStatus": "completed",
+      "currentChallenge": 10,
+      "completedChallenges": 10,
+      "totalChallenges": 10,
+      "questAccuracy": 88,
+      "startTime": "2025-10-21T17:03:47.500Z",
+      "lastActivity": "2025-10-22T15:43:47.435Z",
+      "attemptedQuestions": [
+        {
+          "questionId": "blockchain-basics-challenge-0-question-0",
+          "challengeIndex": 0,
+          "isCorrect": false,
+          "userAnswer": "Block",
+          "correctAnswers": [
+            "Block",
+            "Chain"
+          ],
+          "timeSpent": 17,
+          "attempts": 1,
+          "lastAttempt": "2025-10-22T15:19:51.362Z"
+        },
+        {
+          "questionId": "blockchain-basics-challenge-1-question-0",
+          "challengeIndex": 1,
+          "isCorrect": false,
+          "userAnswer": "Node",
+          "correctAnswers": [
+            "Node",
+            "Network"
+          ],
+          "timeSpent": 11,
+          "attempts": 1,
+          "lastAttempt": "2025-10-22T15:17:08.554Z"
+        },
+        {
+          "questionId": "blockchain-basics-challenge-2-question-1",
+          "challengeIndex": 2,
+          "isCorrect": true,
+          "userAnswer": "Decentralized",
+          "correctAnswers": [
+            "Decentralized",
+            "Distributed"
+          ],
+          "timeSpent": 36,
+          "attempts": 1,
+          "lastAttempt": "2025-10-22T15:26:05.620Z"
+        },
+        {
+          "questionId": "blockchain-basics-challenge-3-question-1",
+          "challengeIndex": 3,
+          "isCorrect": true,
+          "userAnswer": "Block",
+          "correctAnswers": [
+            "Block",
+            "Chain"
+          ],
+          "timeSpent": 29,
+          "attempts": 1,
+          "lastAttempt": "2025-10-22T15:21:54.358Z"
+        },
+        {
+          "questionId": "blockchain-basics-challenge-4-question-2",
+          "challengeIndex": 4,
+          "isCorrect": true,
+          "userAnswer": "Node",
+          "correctAnswers": [
+            "Node",
+            "Network"
+          ],
+          "timeSpent": 28,
+          "attempts": 1,
+          "lastAttempt": "2025-10-22T14:47:12.398Z"
+        },
+        {
+          "questionId": "blockchain-basics-challenge-5-question-2",
+          "challengeIndex": 5,
+          "isCorrect": true,
+          "userAnswer": "Decentralized",
+          "correctAnswers": [
+            "Decentralized",
+            "Distributed"
+          ],
+          "timeSpent": 15,
+          "attempts": 1,
+          "lastAttempt": "2025-10-22T15:40:32.140Z"
+        },
+        {
+          "questionId": "blockchain-basics-challenge-6-question-3",
+          "challengeIndex": 6,
+          "isCorrect": true,
+          "userAnswer": "Block",
+          "correctAnswers": [
+            "Block",
+            "Chain"
+          ],
+          "timeSpent": 22,
+          "attempts": 1,
+          "lastAttempt": "2025-10-22T15:36:58.024Z"
+        },
+        {
+          "questionId": "blockchain-basics-challenge-7-question-3",
+          "challengeIndex": 7,
+          "isCorrect": true,
+          "userAnswer": "Node",
+          "correctAnswers": [
+            "Node",
+            "Network"
+          ],
+          "timeSpent": 10,
+          "attempts": 1,
+          "lastAttempt": "2025-10-22T14:59:14.739Z"
+        },
+        {
+          "questionId": "blockchain-basics-challenge-8-question-4",
+          "challengeIndex": 8,
+          "isCorrect": true,
+          "userAnswer": "Decentralized",
+          "correctAnswers": [
+            "Decentralized",
+            "Distributed"
+          ],
+          "timeSpent": 18,
+          "attempts": 1,
+          "lastAttempt": "2025-10-22T15:26:47.714Z"
+        },
+        {
+          "questionId": "blockchain-basics-challenge-9-question-4",
+          "challengeIndex": 9,
+          "isCorrect": false,
+          "userAnswer": "Block",
+          "correctAnswers": [
+            "Block",
+            "Chain"
+          ],
+          "timeSpent": 21,
+          "attempts": 1,
+          "lastAttempt": "2025-10-22T14:57:56.240Z"
+        }
+      ]
+    }
+  }
+}
