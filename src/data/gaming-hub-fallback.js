@@ -1,6 +1,9 @@
 // Fallback data for Gaming Hub - extracted from hardcoded content
 // This file contains all the previously hardcoded questions, answers, and explanations
 // Only used as reference - the app should use database data exclusively
+//
+// NOTE: Removed from GamifiedLearningHub.js around lines 1091-1240
+// Original hardcoded arrays were commented out and completely removed
 
 export const GAMING_HUB_FALLBACK_DATA = {
   beginnerTopics: [
