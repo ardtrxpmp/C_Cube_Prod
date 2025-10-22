@@ -125,7 +125,7 @@ const fetchStoryModeData = async () => {
     console.error('Error fetching secure story mode data:', error);
     // // Fallback to local secure data
     // try {
-    //   const fallbackData = await import('../../data/secureStoryQuestions.json');
+    // Fallback import removed - using database data only
     //   console.log('📦 Using local secure fallback data for story mode');
     //   return transformSecureStoryData(fallbackData.default);
     // } catch (fallbackError) {
@@ -137,35 +137,7 @@ const fetchStoryModeData = async () => {
   }
 };
 
-// // Create fallback chapters when everything else fails
-// const createFallbackChapters = () => {
-//   console.log('🔄 Creating emergency fallback chapters');
-//   return [
-//     {
-//       title: '🏗️ Blockchain Fundamentals',
-//       description: 'Learn the basics of blockchain technology',
-//       questions: [{
-//         content: 'What is blockchain?',
-//         dialogue: {
-//           speaker: 'Blockchain Guide',
-//           text: 'What is the primary purpose of blockchain technology?'
-//         },
-//         choices: [
-//           'A distributed ledger technology',
-//           'A type of cryptocurrency',
-//           'A web browser',
-//           'A social media platform'
-//         ],
-//         correctChoice: 0,
-//         explanation: {
-//           correctAnswer: 'A distributed ledger technology',
-//           details: 'Blockchain is a distributed ledger technology that maintains a continuously growing list of records.',
-//           keyPoints: ['Decentralized', 'Immutable', 'Transparent']
-//         }
-//       }]
-//     }
-//   ];
-// };
+// Hardcoded data removed - all content now comes from database only
 
 // Transform secure database format to component format
 const transformSecureStoryData = (secureData) => {

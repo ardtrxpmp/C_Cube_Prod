@@ -2441,8 +2441,9 @@ const TokenLaunch = ({ onNavigate }) => {
 
   const handleWalletLaunchOLD = async () => {
     try {
-      // Import the simplified token factory
-      const { deploySimpleToken, switchToBSC } = await import('../utils/SimpleTokenFactory');
+      // Import the simplified token factory - COMMENTED OUT: missing file
+      // const { deploySimpleToken, switchToBSC } = await import('../utils/SimpleTokenFactory');
+      console.log('handleWalletLaunchOLD called but disabled - missing SimpleTokenFactory');
       
       console.log('🚀 Starting simplified wallet deployment...');
       
@@ -2485,7 +2486,8 @@ const TokenLaunch = ({ onNavigate }) => {
         console.log('🔄 Switching to BSC network...');
         
         try {
-          await switchToBSC(isMainnet);
+          // await switchToBSC(isMainnet); // COMMENTED OUT: missing SimpleTokenFactory
+          throw new Error('Network switch functionality temporarily disabled');
           // Refresh provider after network switch
           const newProvider = new ethers.BrowserProvider(window.ethereum);
           const newSigner = await newProvider.getSigner();
@@ -2500,16 +2502,18 @@ const TokenLaunch = ({ onNavigate }) => {
 
       console.log('🌐 Network confirmed:', isMainnet ? 'BSC Mainnet' : 'BSC Testnet');
       
-      // Use the simplified deployment function
-      const result = await deploySimpleToken({
-        name: formData.tokenName.trim(),
-        symbol: formData.tokenSymbol.trim(),
-        totalSupply: formData.initialSupply,
-        signer: signer,
-        onStatusUpdate: (status) => {
-          console.log('🔄', status);
-        }
-      });
+      // Use the simplified deployment function - COMMENTED OUT: missing SimpleTokenFactory
+      // const result = await deploySimpleToken({
+      //   name: formData.tokenName.trim(),
+      //   symbol: formData.tokenSymbol.trim(),
+      //   totalSupply: formData.initialSupply,
+      //   signer: signer,
+      //   onStatusUpdate: (status) => {
+      //     console.log('🔄', status);
+      //   }
+      // });
+      
+      throw new Error('handleWalletLaunchOLD is disabled - missing SimpleTokenFactory module');
 
       console.log('✅ Deployment successful!', result);
 
