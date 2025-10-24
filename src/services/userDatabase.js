@@ -345,14 +345,12 @@ class UserDatabaseService {
       
       const userData = userResult.userData;
       
-      // Sync with session storage points
+      // DO NOT sync database points to session storage - session storage should only contain new gameplay points
       if (typeof sessionStorage !== 'undefined') {
-        // Update session storage with database points
-        sessionStorage.setItem('ccube_user_points', JSON.stringify(userData.points));
-        sessionStorage.setItem('ccube_user_progress', JSON.stringify(userData.progress));
+        // Only set wallet address, but NOT the points (to prevent double-counting)
         sessionStorage.setItem('ccube_user_wallet', walletAddress);
         
-        console.log(`✅ Session storage synced for ${walletAddress}`);
+        console.log(`✅ Wallet address synced to session storage for ${walletAddress} (points NOT synced to avoid double-counting)`);
       }
       
       return {

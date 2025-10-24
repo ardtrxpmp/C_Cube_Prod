@@ -1744,10 +1744,10 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
         databasePoints = Object.values(walletScores.points.gamingHub).reduce((sum, val) => sum + val, 0);
       }
       
-      // Return the higher value (to show best progress)
-      const totalPoints = Math.max(sessionPoints, databasePoints);
+      // Add database points + current session points for live updating
+      const totalPoints = databasePoints + sessionPoints;
       
-      console.log(`🎮 Gaming Hub Points: Session=${sessionPoints}, Database=${databasePoints}, Total=${totalPoints}`);
+      console.log(`🎮 Gaming Hub Points: Database=${databasePoints}, Session=${sessionPoints}, Total=${totalPoints}`);
       return totalPoints;
     } catch (e) {
       console.error('Error reading gaming hub points:', e);

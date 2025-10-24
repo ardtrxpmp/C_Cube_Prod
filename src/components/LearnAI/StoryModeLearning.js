@@ -562,7 +562,7 @@ const ChoicesContainer = styled.div`
 
 const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
   // Wallet integration for score reading
-  const { walletScores, walletScoresLoading } = useWallet();
+  const { walletScores, walletScoresLoading, isWalletConnected } = useWallet();
   // Initialize state with persistent data if available
   const initializeState = () => {
     try {
@@ -755,6 +755,11 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
   // Helper function to calculate story mode points combining session and database
   const calculateStoryModePoints = () => {
     try {
+      console.log('📚 StoryMode - isWalletConnected:', isWalletConnected);
+      console.log('📚 StoryMode - walletScores:', walletScores);
+      console.log('📚 StoryMode - walletScores?.points?.storyMode:', walletScores?.points?.storyMode);
+      console.log('📚 StoryMode - FULL walletScores.points:', walletScores?.points);
+      
       let sessionPoints = 0;
       let databasePoints = 0;
       
@@ -775,10 +780,21 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
             .reduce((sum, val) => sum + val, 0);
       }
       
-      // Return the higher value (to show best progress)
-      const totalPoints = Math.max(sessionPoints, databasePoints);
+      console.log('📚 StoryMode - databasePoints calculated:', databasePoints);
       
-      console.log(`📚 Story Mode Points: Session=${sessionPoints}, Database=${databasePoints}, Total=${totalPoints}`);
+      // Use same simple logic as MigratePointDashboard: wallet connected = database points
+      let totalPoints = 0;
+      if (isWalletConnected && walletScores?.points?.storyMode?.totalScore) {
+        totalPoints = walletScores.points.storyMode.totalScore;
+        console.log(`📚 Story Mode Points: Using database totalScore = ${totalPoints}`);
+      } else if (isWalletConnected && walletScores?.points?.storyMode) {
+        totalPoints = databasePoints;
+        console.log(`📚 Story Mode Points: Using calculated database points = ${databasePoints}`);
+      } else {
+        totalPoints = 0;
+        console.log(`📚 Story Mode Points: No wallet or no database points = 0, isWalletConnected=${isWalletConnected}, hasWalletScores=${!!walletScores?.points?.storyMode}`);
+      }
+      
       return totalPoints;
     } catch (e) {
       console.error('Error reading story mode points:', e);
@@ -792,7 +808,7 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
   // Calculate points with dependency on refresh trigger and wallet scores
   const totalStoryModePoints = useMemo(() => {
     return calculateStoryModePoints();
-  }, [refreshTrigger, walletScores]);
+  }, [refreshTrigger, walletScores, isWalletConnected]);
 
   // Update totalPoints state when wallet scores or calculated points change
   useEffect(() => {
@@ -1017,6 +1033,14 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
   };
 
   const getChapterScore = (chapterIndex) => {
+    // Use database scores when wallet connected
+    if (isWalletConnected && walletScores?.points?.storyMode) {
+      // Database has chapters as chapter1, chapter2, etc.
+      const chapterKey = `chapter${chapterIndex + 1}`;
+      return walletScores.points.storyMode[chapterKey] || 0;
+    }
+    
+    // Fallback to session scores
     const chapterKey = `chapter-${chapterIndex}`;
     const chapterData = chapterScores[chapterKey];
     if (!chapterData) return 0;
@@ -1261,7 +1285,11 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
             
             <PointsContainer>
               <PointsLabel>Total Points Earned</PointsLabel>
-              <PointsValue>{totalStoryModePoints}</PointsValue>
+              <PointsValue>{(() => {
+                const databasePoints = walletScores?.points?.storyMode?.totalScore || 0;
+                const sessionPoints = getTotalCorrectAnswers();
+                return databasePoints + sessionPoints;
+              })()}</PointsValue>
             </PointsContainer>
             
             <StatsGrid>

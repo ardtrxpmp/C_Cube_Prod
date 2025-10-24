@@ -271,7 +271,8 @@ const SelectorButton = styled.button`
     setShowWalletModal,
     currentWalletType,
     walletScores,
-    fetchWalletScores
+    fetchWalletScores,
+    isAnyWalletConnected
   } = useWallet();
   const [walletSetup, setWalletSetup] = useState(false);
   const [showWalletSetup, setShowWalletSetup] = useState(false);
@@ -572,9 +573,18 @@ const SelectorButton = styled.button`
     }
   }, [cCubeWalletConnected]);
 
-  // Load points from sessionStorage on component mount
+  // Load points from sessionStorage on component mount - ONLY when no wallet is connected
   useEffect(() => {
     console.log('LearnAIInterface mounting - checking sessionStorage for points...');
+    const walletConnected = isAnyWalletConnected();
+    console.log('Wallet connected status:', walletConnected);
+    
+    // Don't restore session storage if wallet is connected - let database scores take precedence
+    if (walletConnected) {
+      console.log('Wallet connected - skipping session storage restoration to allow database scores');
+      return;
+    }
+    
     const savedPoints = sessionStorage.getItem('ccube_user_points');
     console.log('Raw saved points from sessionStorage:', savedPoints);
     
@@ -614,7 +624,7 @@ const SelectorButton = styled.button`
     } else {
       console.log('No saved points found in sessionStorage');
     }
-  }, []);
+  }, [cCubeWalletConnected, externalWalletConnected, isAnyWalletConnected]);
 
   // Wallet connection state is now managed by global context
 

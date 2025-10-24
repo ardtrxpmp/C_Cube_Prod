@@ -164,10 +164,20 @@ export const WalletProvider = ({ children }) => {
       console.log(`🎯 Wallet connected, auto-fetching scores for: ${currentAddress.slice(0, 6)}...${currentAddress.slice(-4)}`);
       fetchWalletScores(currentAddress);
     } else {
-      // Wallet disconnected or no wallet connected, clear scores from UI
-      console.log('🧹 Wallet disconnected, clearing scores from UI');
+      // Wallet disconnected or no wallet connected, clear scores from UI AND ALL session storage
+      console.log('🧹 Wallet disconnected, clearing scores from UI and ALL session storage');
       setWalletScores(null);
       setWalletScoresLoading(false);
+      
+      // Clear ALL wallet-related session storage items
+      sessionStorage.removeItem('ccube_user_points');
+      sessionStorage.removeItem('ccube_user_wallet');
+      sessionStorage.removeItem('ccube_game_progress'); 
+      sessionStorage.removeItem('ccube_story_progress');
+      sessionStorage.removeItem('ccube_story_shuffle_seed');
+      sessionStorage.removeItem('ccube_session_active');
+      
+      console.log('🧹 ALL session storage cleared on wallet disconnect - fresh slate');
     }
   }, [cCubeWalletConnected, cCubeWalletData?.address, externalWalletConnected, externalWalletData?.address]);
   
@@ -199,6 +209,15 @@ export const WalletProvider = ({ children }) => {
       
       setCCubeWalletConnected(false);
       setCCubeWalletData(null);
+      
+      // Clear ALL session storage on disconnect
+      sessionStorage.removeItem('ccube_user_points');
+      sessionStorage.removeItem('ccube_user_wallet');
+      sessionStorage.removeItem('ccube_game_progress'); 
+      sessionStorage.removeItem('ccube_story_progress');
+      sessionStorage.removeItem('ccube_story_shuffle_seed');
+      sessionStorage.removeItem('ccube_session_active');
+      console.log('🧹 ALL session storage cleared on C-Cube wallet disconnect');
       
       // If this was the current wallet, clear current type
       if (currentWalletType === 'ccube') {
@@ -276,6 +295,15 @@ export const WalletProvider = ({ children }) => {
       
       setExternalWalletConnected(false);
       setExternalWalletData(null);
+      
+      // Clear ALL session storage on disconnect
+      sessionStorage.removeItem('ccube_user_points');
+      sessionStorage.removeItem('ccube_user_wallet');
+      sessionStorage.removeItem('ccube_game_progress'); 
+      sessionStorage.removeItem('ccube_story_progress');
+      sessionStorage.removeItem('ccube_story_shuffle_seed');
+      sessionStorage.removeItem('ccube_session_active');
+      console.log('🧹 ALL session storage cleared on external wallet disconnect');
       
       // If this was the current wallet, clear current type
       if (currentWalletType === 'external') {
