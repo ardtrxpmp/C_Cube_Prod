@@ -399,7 +399,7 @@ const getStoryModeChapterPoints = () => {
   }
 };
 
-const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, cCubeWalletData, externalWalletData, isWalletConnected, addPoints, resetPoints }) => {
+const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, cCubeWalletData, externalWalletData, isWalletConnected, addPoints, resetPoints, walletScores, fetchWalletScores }) => {
   // Enhanced debugging and fallback system
   const [debugInfo, setDebugInfo] = useState({});
   
@@ -424,19 +424,30 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, cCub
   const [userTokenBalance, setUserTokenBalance] = useState('0');
   const [forceRefresh, setForceRefresh] = useState(0);
   
-  // Real-time data from user progress with immediate sessionStorage priority
+  // Real-time data from wallet scores, sessionStorage and user progress
   const points = useMemo(() => {
     console.log('🔍 MigratePointDashboard - Computing points... (refresh:', forceRefresh, ')');
     
-    // ALWAYS check sessionStorage first for most up-to-date data
+    // Check data sources
     const savedPoints = sessionStorage.getItem('ccube_user_points');
+    console.log('🏦 walletScores (database):', walletScores);
     console.log('💾 sessionStorage points (latest):', savedPoints);
     console.log('📊 userProgress.points (backup):', userProgress?.points);
     
     let finalPoints;
     
-    // Priority 1: Use sessionStorage (most up-to-date from Gaming Hub/Story Mode)
-    if (savedPoints) {
+    // Priority 1: Use walletScores from database if wallet is connected and scores exist
+    if (isWalletConnected && walletScores && walletScores.points) {
+      finalPoints = { ...walletScores.points };
+      console.log('✅ Using wallet scores from database');
+      
+      // Ensure all required properties exist with proper structure
+      if (!finalPoints.gamingHub) finalPoints.gamingHub = { blockchainBasics: 0, smartContracts: 0, defiProtocols: 0, nftsWeb3: 0 };
+      if (!finalPoints.storyMode) finalPoints.storyMode = { chapter1: 0, chapter2: 0, chapter3: 0, chapter4: 0, chapter5: 0, chapter6: 0, chapter7: 0, chapter8: 0 };
+      if (finalPoints.achievements === undefined) finalPoints.achievements = 0;
+    }
+    // Priority 2: Use sessionStorage (most up-to-date from Gaming Hub/Story Mode)
+    else if (savedPoints) {
       try {
         finalPoints = JSON.parse(savedPoints);
         console.log('✅ Using fresh sessionStorage points');
@@ -445,14 +456,13 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, cCub
         finalPoints = null;
       }
     }
-    
-    // Priority 2: Fallback to userProgress if sessionStorage fails
-    if (!finalPoints && userProgress?.points) {
+    // Priority 3: Fallback to userProgress if sessionStorage fails
+    else if (userProgress?.points) {
       finalPoints = userProgress.points;
       console.log('⚠️ Fallback to userProgress.points');
     }
     
-    // Priority 3: Final fallback to default structure
+    // Priority 4: Final fallback to default structure
     if (!finalPoints) {
       finalPoints = {
         total: 0,
@@ -466,19 +476,41 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, cCub
     // Ensure proper totals calculation
     if (finalPoints.gamingHub && finalPoints.storyMode) {
       const gamingTotal = Object.values(finalPoints.gamingHub).reduce((sum, val) => sum + val, 0);
-      const storyTotal = Object.values(finalPoints.storyMode).reduce((sum, val) => sum + val, 0);
-      finalPoints.total = gamingTotal + storyTotal + (finalPoints.achievements || 0);
+      const storyTotal = finalPoints.storyMode.totalScore || Object.values(finalPoints.storyMode).reduce((sum, val) => sum + val, 0);
+      
+      // Handle achievements - could be number or object
+      let achievementsTotal = 0;
+      if (typeof finalPoints.achievements === 'number') {
+        achievementsTotal = finalPoints.achievements;
+      } else if (typeof finalPoints.achievements === 'object' && finalPoints.achievements !== null) {
+        // If achievements is an object (like from walletScores), convert to number for UI display
+        // Count true values as achievement points (but don't add to total - already included in database total)
+        achievementsTotal = Object.values(finalPoints.achievements).reduce((sum, val) => {
+          if (typeof val === 'boolean') return sum + (val ? 1 : 0);
+          if (typeof val === 'number') return sum + val;
+          return sum;
+        }, 0);
+      }
+      
+      // If total is already provided (from database), use it - don't recalculate
+      if (!finalPoints.total || finalPoints.total === 0) {
+        finalPoints.total = gamingTotal + storyTotal + achievementsTotal;
+      }
+      
+      // Normalize achievements to be a number for consistent UI display
+      finalPoints.achievements = achievementsTotal;
       
       console.log('🎯 Final computed points:', {
         gaming: gamingTotal,
         story: storyTotal, 
-        achievements: finalPoints.achievements || 0,
-        total: finalPoints.total
+        achievements: achievementsTotal,
+        total: finalPoints.total,
+        source: finalPoints.total > 0 ? 'database total' : 'calculated total'
       });
     }
     
     return finalPoints;
-  }, [userProgress, forceRefresh]);
+  }, [walletScores, isWalletConnected, userProgress, forceRefresh]);
 
   // Enhanced refresh points function with loading state
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -774,12 +806,27 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, cCub
           SessionStorage has points: {debugInfo.sessionStoragePoints ? '✅' : '❌'}<br/>
           Computed points total: {debugInfo.computedPointsTotal}<br/>
           <strong>📊 Points Breakdown:</strong><br/>
-          • Gaming Hub Total: {calculateGamingHubPoints()}<br/>
-          • Story Mode Total: {calculateStoryModePoints()}<br/>
+          • Gaming Hub Total: {(() => {
+            if (isWalletConnected && walletScores?.points?.gamingHub) {
+              return Object.values(walletScores.points.gamingHub).reduce((sum, val) => sum + val, 0);
+            }
+            return calculateGamingHubPoints();
+          })()}<br/>
+          • Story Mode Total: {(() => {
+            if (isWalletConnected && walletScores?.points?.storyMode) {
+              return walletScores.points.storyMode.totalScore || 0;
+            }
+            return calculateStoryModePoints();
+          })()}<br/>
           • Achievements: {points.achievements || 0}<br/>
           <strong>🎮 Gaming Hub Details:</strong><br/>
           {(() => {
-            const categories = getGamingHubCategoryPoints();
+            let categories;
+            if (isWalletConnected && walletScores?.points?.gamingHub) {
+              categories = walletScores.points.gamingHub;
+            } else {
+              categories = getGamingHubCategoryPoints();
+            }
             const entries = Object.entries(categories);
             if (entries.length === 0) return '• No Gaming Hub points yet';
             return entries.map(([key, value], index) => (
@@ -791,6 +838,9 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, cCub
           })()}<br/>
           <strong>📖 Story Mode Details:</strong><br/>
           {(() => {
+            if (isWalletConnected && walletScores?.points?.storyMode) {
+              return `• Chapters Completed: ${walletScores.points.storyMode.chaptersCompleted || 0}<br/>• Total Score: ${walletScores.points.storyMode.totalScore || 0} pts`;
+            }
             const chapters = getStoryModeChapterPoints();
             const entries = Object.entries(chapters);
             if (entries.length === 0) return '• No Story Mode points yet';
@@ -973,12 +1023,24 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, cCub
           <StatDescription>Ready for migration</StatDescription>
         </StatCard>
         <StatCard>
-          <StatValue>{calculateGamingHubPoints().toLocaleString()}</StatValue>
+          <StatValue>{(() => {
+            // Use wallet scores if available, otherwise fall back to sessionStorage
+            if (isWalletConnected && walletScores?.points?.gamingHub) {
+              return Object.values(walletScores.points.gamingHub).reduce((sum, val) => sum + val, 0).toLocaleString();
+            }
+            return calculateGamingHubPoints().toLocaleString();
+          })()}</StatValue>
           <StatLabel>Gaming Hub Points</StatLabel>
           <StatDescription>From all game categories</StatDescription>
         </StatCard>
         <StatCard>
-          <StatValue>{calculateStoryModePoints().toLocaleString()}</StatValue>
+          <StatValue>{(() => {
+            // Use wallet scores if available, otherwise fall back to sessionStorage
+            if (isWalletConnected && walletScores?.points?.storyMode) {
+              return (walletScores.points.storyMode.totalScore || 0).toLocaleString();
+            }
+            return calculateStoryModePoints().toLocaleString();
+          })()}</StatValue>
           <StatLabel>Story Mode Points</StatLabel>
           <StatDescription>From completed chapters</StatDescription>
         </StatCard>
@@ -1010,7 +1072,12 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, cCub
         <MigrateButton 
           onClick={async () => {
             try {
-              console.log('💾 Saving points to database...');
+              console.log('💾 === SAVE BUTTON CLICKED ===');
+              console.log('🔍 Debug wallet props:');
+              console.log('  - cCubeWalletData:', cCubeWalletData);
+              console.log('  - externalWalletData:', externalWalletData);
+              console.log('  - walletData:', walletData);
+              console.log('  - isWalletConnected:', isWalletConnected);
               
               // Get current wallet address from any connected wallet
               let currentWallet = null;
@@ -1026,6 +1093,8 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, cCub
                 console.log('💼 Using wallet data:', currentWallet);
               }
               
+              console.log('🎯 Final wallet address:', currentWallet);
+              
               if (!currentWallet) {
                 setSuccessMessage('No Wallet Connected\n\nPlease connect your wallet first to save points.\n\nSupported wallets:\n• C-Cube Wallet\n• MetaMask\n• Other Web3 wallets');
                 setShowSuccessModal(true);
@@ -1036,13 +1105,24 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, cCub
               
               // Get current points from session
               const currentPoints = sessionStorage.getItem('ccube_user_points');
-              if (!currentPoints || JSON.parse(currentPoints).total === 0) {
+              console.log('📊 Raw points from sessionStorage:', currentPoints);
+              
+              if (!currentPoints) {
+                console.log('❌ No points found in sessionStorage');
                 setSuccessMessage('No Points to Save\n\nYou don\'t have any points to save yet.\n\nComplete some activities to earn points first:\n• Gaming Hub challenges\n• Story Mode chapters\n• Learning activities');
                 setShowSuccessModal(true);
                 return;
               }
               
               const pointsData = JSON.parse(currentPoints);
+              console.log('📊 Parsed points data:', pointsData);
+              
+              if (pointsData.total === 0) {
+                console.log('❌ Points total is 0');
+                setSuccessMessage('No Points to Save\n\nYour total points is 0.\n\nComplete some activities to earn points first:\n• Gaming Hub challenges\n• Story Mode chapters\n• Learning activities');
+                setShowSuccessModal(true);
+                return;
+              }
               
               // Create user data following Users_Scores schema
               const userData = {
@@ -1098,76 +1178,64 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, cCub
                 }
               }
               
-              // Method 2: Direct GitHub API Save
+              // Method 2: Use Server API Endpoint
               if (!saveSuccess) {
                 try {
+                  console.log('💾 Saving to database via server API...');
+                  console.log('🌐 API Endpoint:', window.location.hostname);
                   
-                  const githubToken = process.env.REACT_APP_GITHUB_TOKEN;
-                  const fileName = `${currentWallet}.json`;
-                  const filePath = `users/Users_Scores/${fileName}`;
-                  const fileContent = JSON.stringify(userData, null, 2);
+                  // Use relative URL when in development (proxy handles routing to :3334)
+                  // Use absolute URL in production
+                  const apiEndpoint = window.location.hostname === 'localhost' 
+                    ? '' // Use proxy - requests go to same origin and proxy routes to :3334
+                    : '';
                   
-                  // Check if file exists first
-                  let sha = null;
-                  const checkUrl = `https://api.github.com/repos/cyfocube/C_DataBase/contents/${filePath}`;
+                  const fullUrl = `${apiEndpoint}/api/save-user-scores`;
+                  console.log('📡 Making request to:', fullUrl);
+                  console.log('📦 Request data:', { walletAddress: currentWallet, userData });
                   
-                  try {
-                    const checkResponse = await fetch(checkUrl, {
-                      headers: {
-                        'Authorization': `token ${githubToken}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'User-Agent': 'C-Cube-Wallet-App'
-                      }
-                    });
-                    
-                    if (checkResponse.ok) {
-                      const existingFile = await checkResponse.json();
-                      sha = existingFile.sha;
-                      console.log('📝 Updating existing wallet file');
-                    }
-                  } catch (checkError) {
-                    console.log('📄 Creating new wallet file');
-                  }
-                  
-                  // Save to GitHub
-                  const saveUrl = `https://api.github.com/repos/cyfocube/C_DataBase/contents/${filePath}`;
-                  const requestBody = {
-                    message: `Update wallet ${currentWallet} - ${userData.points.total} points`,
-                    content: btoa(unescape(encodeURIComponent(fileContent))),
-                    branch: 'main'
-                  };
-                  
-                  if (sha) {
-                    requestBody.sha = sha;
-                  }
-                  
-                  const saveResponse = await fetch(saveUrl, {
-                    method: 'PUT',
+                  const response = await fetch(fullUrl, {
+                    method: 'POST',
                     headers: {
-                      'Authorization': `token ${githubToken}`,
                       'Content-Type': 'application/json',
-                      'Accept': 'application/vnd.github.v3+json',
-                      'User-Agent': 'C-Cube-Wallet-App'
                     },
-                    body: JSON.stringify(requestBody)
+                    body: JSON.stringify({
+                      walletAddress: currentWallet,
+                      userData: userData
+                    })
                   });
                   
-                  if (saveResponse.ok) {
-                    const result = await saveResponse.json();
+                  console.log('📨 Response status:', response.status);
+                  console.log('📨 Response ok:', response.ok);
+                  
+                  if (response.ok) {
+                    const result = await response.json();
                     
-                    setSuccessMessage(`Points Migration Successful!\n\nTotal Points: ${userData.points.total}\nGaming Hub: ${Object.values(userData.points.gamingHub).reduce((a,b) => a+b, 0)}\nStory Mode: ${userData.points.storyMode.totalScore}\n\nYour wallet data has been successfully saved to the GitHub database.\nFuture points will automatically sync.`);
+                    console.log('✅ Server save successful:', result);
+                    
+                    setSuccessMessage(`Points Migration Successful!\n\nTotal Points: ${userData.points.total}\nGaming Hub: ${Object.values(userData.points.gamingHub).reduce((a,b) => a+b, 0)}\nStory Mode: ${userData.points.storyMode.totalScore}\n\nYour wallet data has been successfully saved to the database.\nMethod: ${result.data.saveMethod}\nAction: ${result.data.action}\n\nFuture points will automatically sync!`);
                     setShowSuccessModal(true);
                     
-                    // Original alert was: alert(`🎉 SUCCESS! Points saved to GitHub database!\n\n📊 Total Points: ${userData.points.total}\n🎮 Gaming Hub: ${Object.values(userData.points.gamingHub).reduce((a,b) => a+b, 0)}\n� Story Mode: ${userData.points.storyMode.totalScore}\n\n🏛️ Repository: cyfocube/C_DataBase\n📁 Path: users/Users_Scores/${currentWallet}.json\n🔗 File URL: ${result.content.html_url}\n\n✨ Your wallet data is now permanently stored in the GitHub database!\n🔄 Future points will automatically sync.`);
-                    
                     saveSuccess = true;
+                    
+                    // Auto-refresh wallet scores after successful save
+                    if (fetchWalletScores) {
+                      setTimeout(() => {
+                        fetchWalletScores(currentWallet);
+                      }, 1000);
+                    }
+                    
                   } else {
-                    const errorData = await saveResponse.json();
-                    throw new Error(`GitHub save failed: ${saveResponse.status} - ${errorData.message}`);
+                    const errorData = await response.json();
+                    throw new Error(`Server save failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
                   }
                   
-                } catch (githubError) {
-                  console.warn('⚠️ Direct GitHub save failed:', githubError);
+                } catch (serverError) {
+                  console.error('❌ Server save failed with detailed error:', serverError);
+                  console.error('❌ Error name:', serverError.name);
+                  console.error('❌ Error message:', serverError.message);
+                  console.error('❌ Error stack:', serverError.stack);
+                  alert(`API Save Failed!\n\nError: ${serverError.message}\n\nCheck console for details. Falling back to manual save.`);
                   // Will fall through to Method 3 (manual download)
                 }
               }

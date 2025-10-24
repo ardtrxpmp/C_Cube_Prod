@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
+import walletScoreService from '../services/WalletScoreService';
 
 // Create the Wallet Context
 const WalletContext = createContext();
@@ -28,6 +29,10 @@ export const WalletProvider = ({ children }) => {
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [gasPrice, setGasPrice] = useState(null);
   const [isMainnet, setIsMainnet] = useState(false);
+  
+  // Wallet Scores State - automatically loaded when wallet connects
+  const [walletScores, setWalletScores] = useState(null);
+  const [walletScoresLoading, setWalletScoresLoading] = useState(false);
   
   // Load wallet state from localStorage on app initialization
   useEffect(() => {
@@ -104,6 +109,67 @@ export const WalletProvider = ({ children }) => {
       console.error('❌ Error saving network state:', error);
     }
   }, [isMainnet]);
+
+  // Wallet Score Management Functions
+  const fetchWalletScores = async (walletAddress) => {
+    if (!walletAddress) {
+      setWalletScores(null);
+      return null;
+    }
+
+    setWalletScoresLoading(true);
+    console.log(`🔍 Fetching scores for wallet: ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
+
+    try {
+      const scores = await walletScoreService.readWalletScores(walletAddress);
+      
+      if (scores) {
+        setWalletScores(scores);
+        console.log(`✅ Loaded wallet scores:`, {
+          totalPoints: scores.points?.total || 0,
+          gamingHub: Object.values(scores.points?.gamingHub || {}).reduce((sum, val) => sum + val, 0),
+          storyMode: scores.points?.storyMode?.totalScore || 0,
+          wallet: walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4)
+        });
+        return scores;
+      } else {
+        setWalletScores(null);
+        console.log(`📭 No existing scores found for wallet: ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error fetching wallet scores:', error);
+      setWalletScores(null);
+      return null;
+    } finally {
+      setWalletScoresLoading(false);
+    }
+  };
+
+  // Auto-fetch wallet scores when any wallet connects
+  useEffect(() => {
+    const getCurrentWalletAddress = () => {
+      if (cCubeWalletConnected && cCubeWalletData?.address) {
+        return cCubeWalletData.address;
+      }
+      if (externalWalletConnected && externalWalletData?.address) {
+        return externalWalletData.address;
+      }
+      return null;
+    };
+
+    const currentAddress = getCurrentWalletAddress();
+    
+    if (currentAddress) {
+      console.log(`🎯 Wallet connected, auto-fetching scores for: ${currentAddress.slice(0, 6)}...${currentAddress.slice(-4)}`);
+      fetchWalletScores(currentAddress);
+    } else {
+      // Wallet disconnected or no wallet connected, clear scores from UI
+      console.log('🧹 Wallet disconnected, clearing scores from UI');
+      setWalletScores(null);
+      setWalletScoresLoading(false);
+    }
+  }, [cCubeWalletConnected, cCubeWalletData?.address, externalWalletConnected, externalWalletData?.address]);
   
   // C-Cube Wallet Connection Functions
   const connectCCubeWallet = async (walletData) => {
@@ -359,6 +425,11 @@ export const WalletProvider = ({ children }) => {
     setGasPrice,
     isMainnet,
     setIsMainnet,
+    
+    // Wallet Scores
+    walletScores,
+    walletScoresLoading,
+    fetchWalletScores,
     
     // Utility Functions
     disconnectAllWallets,

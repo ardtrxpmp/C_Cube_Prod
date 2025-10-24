@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { validateAnswer, obfuscateDataForLogging } from '../../utils/answerSecurity';
+import { useWallet } from '../../context/WalletContext';
 
 // Secure database service for fetching story mode questions from individual chapter files
 const fetchStoryModeData = async () => {
@@ -560,6 +561,8 @@ const ChoicesContainer = styled.div`
 `;
 
 const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
+  // Wallet integration for score reading
+  const { walletScores, walletScoresLoading } = useWallet();
   // Initialize state with persistent data if available
   const initializeState = () => {
     try {
@@ -749,16 +752,34 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
   // Original content moved to: src/data/story-mode-fallback.js
   // All content now comes exclusively from C_DataBase repository
   
-  // Helper function to calculate story mode points
+  // Helper function to calculate story mode points combining session and database
   const calculateStoryModePoints = () => {
     try {
+      let sessionPoints = 0;
+      let databasePoints = 0;
+      
+      // Get session storage points
       const savedPoints = sessionStorage.getItem('ccube_user_points');
       if (savedPoints) {
         const pointsData = JSON.parse(savedPoints);
         if (pointsData.storyMode) {
-          return Object.values(pointsData.storyMode).reduce((sum, val) => sum + val, 0);
+          sessionPoints = Object.values(pointsData.storyMode).reduce((sum, val) => sum + val, 0);
         }
       }
+      
+      // Get database points from wallet
+      if (walletScores?.points?.storyMode) {
+        databasePoints = walletScores.points.storyMode.totalScore || 
+          Object.values(walletScores.points.storyMode)
+            .filter(val => typeof val === 'number')
+            .reduce((sum, val) => sum + val, 0);
+      }
+      
+      // Return the higher value (to show best progress)
+      const totalPoints = Math.max(sessionPoints, databasePoints);
+      
+      console.log(`📚 Story Mode Points: Session=${sessionPoints}, Database=${databasePoints}, Total=${totalPoints}`);
+      return totalPoints;
     } catch (e) {
       console.error('Error reading story mode points:', e);
     }
@@ -768,10 +789,15 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
   // All hooks must be called before any early returns
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   
-  // Calculate points with dependency on refresh trigger
+  // Calculate points with dependency on refresh trigger and wallet scores
   const totalStoryModePoints = useMemo(() => {
     return calculateStoryModePoints();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, walletScores]);
+
+  // Update totalPoints state when wallet scores or calculated points change
+  useEffect(() => {
+    setTotalPoints(totalStoryModePoints);
+  }, [totalStoryModePoints]);
 
   // Trigger refresh when points might have changed
   useEffect(() => {
@@ -1251,9 +1277,21 @@ const StoryModeLearning = ({ userProgress, setUserProgress, addPoints }) => {
                 <StatValue>{getAccuracyPercentage()}%</StatValue>
                 <StatLabel>Accuracy</StatLabel>
               </StatBox>
-              <StatBox>
-                <StatValue>{Object.keys(chapterScores).length}</StatValue>
-                <StatLabel>Chapters</StatLabel>
+              <StatBox style={{ 
+                background: walletScores ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                border: `1px solid ${walletScores ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
+              }}>
+                <StatValue style={{ color: walletScores ? '#10b981' : '#f59e0b' }}>
+                  {walletScoresLoading ? '⏳' : walletScores ? '🏦' : '📱'}
+                </StatValue>
+                <StatLabel>
+                  {walletScoresLoading 
+                    ? 'Loading...' 
+                    : walletScores 
+                      ? 'Database'
+                      : 'Session'
+                  }
+                </StatLabel>
               </StatBox>
             </StatsGrid>
 

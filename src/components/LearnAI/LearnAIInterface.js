@@ -257,16 +257,21 @@ const SelectorButton = styled.button`
 `;
 
   const LearnAIInterface = ({ activeInterface = 'enhanced-chat' }) => {
-  // Use global wallet context
-  const {
-    cCubeWalletConnected,
-    cCubeWalletData,
-    externalWalletConnected,
+  // Use wallet context
+  const { 
+    cCubeWalletConnected, 
+    cCubeWalletData, 
+    externalWalletConnected, 
     externalWalletData,
     connectCCubeWallet,
     disconnectCCubeWallet,
-    isAnyWalletConnected,
-    getWalletDisplayName
+    connectExternalWallet,
+    disconnectExternalWallet,
+    showWalletModal,
+    setShowWalletModal,
+    currentWalletType,
+    walletScores,
+    fetchWalletScores
   } = useWallet();
   const [walletSetup, setWalletSetup] = useState(false);
   const [showWalletSetup, setShowWalletSetup] = useState(false);
@@ -639,6 +644,8 @@ const SelectorButton = styled.button`
           isWalletConnected={cCubeWalletConnected || externalWalletConnected}
           addPoints={addPoints}
           resetPoints={resetPoints}
+          walletScores={walletScores}
+          fetchWalletScores={fetchWalletScores}
           onWalletSetupRequest={() => setShowWalletSetup(true)}
         />
       </ContentWrapper>
