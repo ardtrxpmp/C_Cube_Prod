@@ -15,7 +15,7 @@ async function handler(req, res) {
     // Get network parameter from query string (default to testnet)
     const isMainnet = req.query.isMainnet === 'true';
     const TOKENS_FOLDER = isMainnet ? 'Token_mainnet' : 'tokens';
-    const IMAGES_FOLDER = isMainnet ? 'Image_mainnet' : 'images';
+    const IMAGES_FOLDER = isMainnet ? 'images_mainnet' : 'images';
 
     if (!GITHUB_TOKEN) {
       console.error('GitHub token not configured');

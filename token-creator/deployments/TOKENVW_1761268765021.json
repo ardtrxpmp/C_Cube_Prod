@@ -1,0 +1,18 @@
+{
+  "contractAddress": "0xCB52e5744555F8BB2b0CA92f877a163ca4BEccC2",
+  "transactionHash": "0xe4146fe4c0673e1b101d3a9afdd9103ea6f56c6010a41170d9650faa6f14622c",
+  "tokenName": "Tokenvw",
+  "tokenSymbol": "TOKENVW",
+  "decimals": 18,
+  "initialSupply": "10000",
+  "ownerAddress": "0x388211c545b25B69cf03bBc1EE897076ca2f944D",
+  "network": "BSC Mainnet",
+  "chainId": 56,
+  "deployedAt": "2025-10-24T01:19:25.021Z",
+  "explorerUrl": "https://bscscan.com/address/0xCB52e5744555F8BB2b0CA92f877a163ca4BEccC2",
+  "description": "The king of the blockchain jungle. This regal crypto lion embodies leadership, courage, and dominance in the DeFi ecosystem. Join the pride and rule the crypto savanna.",
+  "website": "",
+  "twitter": "",
+  "telegram": "",
+  "tokenImage": null
+}

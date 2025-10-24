@@ -1,0 +1,18 @@
+{
+  "contractAddress": "0xEE62EE6F1239279224c0F6Ead57533FBCCcE7722",
+  "transactionHash": "0x7877de04eae688d81ae9dc40347e7f2bfe331c3a54f51e87fe14c01bb53e2b43",
+  "tokenName": "TokenDevtool",
+  "tokenSymbol": "TOKENDEVTOOL",
+  "decimals": 18,
+  "initialSupply": "10000",
+  "ownerAddress": "0x388211c545b25B69cf03bBc1EE897076ca2f944D",
+  "network": "BSC Mainnet",
+  "chainId": 56,
+  "deployedAt": "2025-10-24T00:57:39.407Z",
+  "explorerUrl": "https://bscscan.com/address/0xEE62EE6F1239279224c0F6Ead57533FBCCcE7722",
+  "description": "Token deployed via C-Cube platform",
+  "website": "",
+  "twitter": "",
+  "telegram": "",
+  "tokenImage": null
+}

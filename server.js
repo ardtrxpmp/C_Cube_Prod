@@ -17,6 +17,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Import the API routes
 const deployTokenRoute = require('./api/deploy-token');
 const launchedTokensRoute = require('./api/tokens/launched');
+const saveUserScoresRoute = require('./api/save-user-scores');
 
 // Add request logging middleware
 app.use((req, res, next) => {
@@ -27,6 +28,7 @@ app.use((req, res, next) => {
 // API Routes
 app.use('/api/deploy-token', deployTokenRoute);
 app.get('/api/tokens/launched', launchedTokensRoute);
+app.use('/api/save-user-scores', saveUserScoresRoute);
 
 // Server info endpoint for getting server wallet address
 app.get('/api/server-info', (req, res) => {

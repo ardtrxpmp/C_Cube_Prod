@@ -1,0 +1,18 @@
+{
+  "contractAddress": "0x11AD5344c913492750eD49364322271118C1E8c9",
+  "transactionHash": "0x6a1201344c04874133f3266778f858c584f74c9f0a3e1c8b80e94c1ea1f54594",
+  "tokenName": "ISFT",
+  "tokenSymbol": "ISFT",
+  "decimals": 18,
+  "initialSupply": "1000",
+  "ownerAddress": "0x388211c545b25B69cf03bBc1EE897076ca2f944D",
+  "network": "BSC Mainnet",
+  "chainId": 56,
+  "deployedAt": "2025-10-24T01:38:24.006Z",
+  "explorerUrl": "https://bscscan.com/address/0x11AD5344c913492750eD49364322271118C1E8c9",
+  "description": "Intelligent and playful in the digital waves. This synthesized dolphin navigates the currents of decentralized finance with grace and intelligence.\n",
+  "website": "",
+  "twitter": "",
+  "telegram": "",
+  "tokenImage": null
+}

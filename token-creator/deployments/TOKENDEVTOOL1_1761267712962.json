@@ -1,0 +1,18 @@
+{
+  "contractAddress": "0xFB9ceCce64EC4d1000b8D5725389560C49314659",
+  "transactionHash": "0x35039309974d15ca56af80d9f7d6f8242cff2192de81f46657170092aad090f9",
+  "tokenName": "TokenDevtool1",
+  "tokenSymbol": "TOKENDEVTOOL1",
+  "decimals": 18,
+  "initialSupply": "10000",
+  "ownerAddress": "0x388211c545b25B69cf03bBc1EE897076ca2f944D",
+  "network": "BSC Mainnet",
+  "chainId": 56,
+  "deployedAt": "2025-10-24T01:01:52.962Z",
+  "explorerUrl": "https://bscscan.com/address/0xFB9ceCce64EC4d1000b8D5725389560C49314659",
+  "description": "The king of the blockchain jungle. This regal crypto lion embodies leadership, courage, and dominance in the DeFi ecosystem. Join the pride and rule the crypto savanna.",
+  "website": "",
+  "twitter": "",
+  "telegram": "",
+  "tokenImage": null
+}

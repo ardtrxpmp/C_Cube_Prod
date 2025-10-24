@@ -1,0 +1,18 @@
+{
+  "contractAddress": "0xc7a3F8b8ce6631eD23b03A5A1f4077911701949D",
+  "transactionHash": "0x1ce7e9822e98755444e37b00a699c5ca0fa063e5489d5e0e0178fac3081ee98a",
+  "tokenName": "TokenLauuch",
+  "tokenSymbol": "TOKEAN",
+  "decimals": 18,
+  "initialSupply": "10000",
+  "ownerAddress": "0x388211c545b25B69cf03bBc1EE897076ca2f944D",
+  "network": "BSC Mainnet",
+  "chainId": 56,
+  "deployedAt": "2025-10-24T00:45:06.784Z",
+  "explorerUrl": "https://bscscan.com/address/0xc7a3F8b8ce6631eD23b03A5A1f4077911701949D",
+  "description": "Token deployed via C-Cube platform",
+  "website": "",
+  "twitter": "",
+  "telegram": "",
+  "tokenImage": null
+}

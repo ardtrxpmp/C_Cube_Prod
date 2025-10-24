@@ -1,0 +1,18 @@
+{
+  "contractAddress": "0xCe00b75573259eFbef38514856a6765DeCCcD429",
+  "transactionHash": "0xaba66d196a137e56f6c367eb6045f183739a6b58b0b72502048f83a819169dc5",
+  "tokenName": "Testq",
+  "tokenSymbol": "TESTQ",
+  "decimals": 18,
+  "initialSupply": "1000",
+  "ownerAddress": "0x621d41eC636D51D5e6A6Feb0A826D90532B3f4BF",
+  "network": "BSC Mainnet",
+  "chainId": 56,
+  "deployedAt": "2025-10-24T02:18:10.667Z",
+  "explorerUrl": "https://bscscan.com/address/0xCe00b75573259eFbef38514856a6765DeCCcD429",
+  "description": "Token deployed via C-Cube platform",
+  "website": "",
+  "twitter": "",
+  "telegram": "",
+  "tokenImage": null
+}

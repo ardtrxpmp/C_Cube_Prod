@@ -2058,9 +2058,8 @@ const TokenLaunch = ({ onNavigate }) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
-        // Remove the data:image/...;base64, prefix to get just the base64 string
-        const base64String = reader.result.split(',')[1];
-        resolve(base64String);
+        // Return the full data URL (data:image/...;base64,...)
+        resolve(reader.result);
       };
       reader.onerror = (error) => reject(error);
       reader.readAsDataURL(file);
@@ -2519,27 +2518,46 @@ const TokenLaunch = ({ onNavigate }) => {
 
       // Save to database
       const tokenData = {
-        ...formData,
+        tokenName: formData.name,
+        tokenSymbol: formData.symbol,
+        description: `${formData.name} (${formData.symbol}) - BSC Token`,
+        initialSupply: formData.totalSupply,
+        walletAddress: result.ownerAddress,
+        twitter: formData.twitter || "",
+        website: formData.website || "",
+        telegram: formData.telegram || "",
+        success: true,
         contractAddress: result.contractAddress,
         transactionHash: result.transactionHash,
         explorerUrl: result.explorerUrl,
-        deployedAt: new Date().toISOString(),
-        ownerAddress: result.ownerAddress,
-        network: result.network,
-        decimals: result.decimals,
-        isMainnet: isMainnet
+        deploymentInfo: {
+          contractAddress: result.contractAddress,
+          transactionHash: result.transactionHash,
+          tokenName: formData.name,
+          tokenSymbol: formData.symbol,
+          decimals: result.decimals,
+          initialSupply: formData.totalSupply,
+          ownerAddress: result.ownerAddress,
+          network: result.network,
+          chainId: isMainnet ? 56 : 97,
+          deployedAt: new Date().toISOString(),
+          explorerUrl: result.explorerUrl
+        },
+        metadata: {
+          contractAddress: result.contractAddress,
+          hasImage: !!formData.tokenImage,
+          imageUrl: formData.tokenImage || null,
+          createdAt: new Date().toISOString(),
+          dataFile: `${result.contractAddress.toLowerCase().replace('0x', '')}.json`
+        }
       };
 
       // Try to save to database (don't fail deployment if this fails)
       try {
-        const saveResponse = await fetch('/api/deploy-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(tokenData)
-        });
-        
-        if (saveResponse.ok) {
-          console.log('✅ Token data saved to database');
+        const saved = await saveTokenToGitHub(tokenData);
+        if (saved) {
+          // Refresh token list to show the newly saved token
+          fetchLaunchedTokens();
         } else {
           console.warn('⚠️ Failed to save to database, but deployment succeeded');
         }
@@ -4815,25 +4833,54 @@ DO NOT attempt further mainnet deployments until testnet testing is successful.`
         }
       }
 
+      // Save image to GitHub first if present
+      let imageInfo = null;
+      if (apiFormData.tokenImage && typeof apiFormData.tokenImage === 'string') {
+        console.log('🖼️ Uploading token image to GitHub...');
+        imageInfo = await saveImageToGitHub(apiFormData.tokenImage, deploymentResult.contractAddress, formData.tokenImage);
+      }
+
       // Save token data to database
       const tokenData = {
-        ...apiFormData,
+        tokenName: apiFormData.tokenName,
+        tokenSymbol: apiFormData.tokenSymbol,
+        description: apiFormData.description || `${apiFormData.tokenName} (${apiFormData.tokenSymbol}) - BSC Token`,
+        initialSupply: apiFormData.initialSupply,
+        decimals: "18",
+        walletAddress: deploymentResult.ownerAddress,
+        twitter: apiFormData.twitter || "",
+        website: apiFormData.website || "",
+        telegram: apiFormData.telegram || "",
         contractAddress: deploymentResult.contractAddress,
         transactionHash: deploymentResult.transactionHash,
         explorerUrl: deploymentResult.explorerUrl,
-        deploymentInfo: deploymentResult.deploymentInfo,
-        isMainnet: isMainnet
+        deploymentInfo: {
+          tokenName: apiFormData.tokenName,
+          tokenSymbol: apiFormData.tokenSymbol,
+          initialSupply: parseInt(apiFormData.initialSupply) || 0,
+          decimals: 18,
+          ownerAddress: deploymentResult.ownerAddress,
+          network: isMainnet ? "BSC Mainnet" : "BSC Testnet",
+          chainId: isMainnet ? 56 : 97,
+          deployedAt: new Date().toISOString(),
+          gasUsed: deploymentResult.gasUsed || "1500000"
+        },
+        ...(imageInfo && { image: imageInfo }),
+        metadata: {
+          contractAddress: deploymentResult.contractAddress,
+          hasImage: !!imageInfo,
+          createdAt: new Date().toISOString(),
+          dataFile: `${deploymentResult.contractAddress.toLowerCase().replace('0x', '')}.json`,
+          systemVersion: "batch-deployment-v1",
+          deploymentType: "real-blockchain"
+        }
       };
 
-      const response = await fetch('/api/deploy-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(tokenData),
-      });
-
-      if (!response.ok) {
+      const saved = await saveTokenToGitHub(tokenData);
+      if (saved) {
+        // Refresh token list to show the newly saved token
+        fetchLaunchedTokens();
+      } else {
         console.warn('Token deployed but failed to save to database');
         // Still show success since the token was deployed
       }
@@ -5061,18 +5108,224 @@ DO NOT attempt further mainnet deployments until testnet testing is successful.`
   };
 
   // Database Integration Functions
+  const saveImageToGitHub = async (base64Image, contractAddress, originalFile) => {
+    try {
+      console.log('🖼️ Saving image to GitHub...', contractAddress);
+      const githubToken = process.env.REACT_APP_GITHUB_TOKEN;
+      const imageDirectory = isMainnet ? 'Image_mainnet' : 'images';
+      const fileName = `${contractAddress.toLowerCase().replace('0x', '')}.png`;
+      const filePath = `${imageDirectory}/${fileName}`;
+      
+      // Extract base64 content (remove data:image/...;base64, prefix if present)
+      const base64Content = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
+      
+      console.log('📁 Image path:', filePath);
+      
+      // Check if image file exists first
+      let sha = null;
+      const checkUrl = `https://api.github.com/repos/cyfocube/C_DataBase/contents/${filePath}`;
+      
+      try {
+        const checkResponse = await fetch(checkUrl, {
+          headers: {
+            'Authorization': `token ${githubToken}`,
+            'Accept': 'application/vnd.github.v3+json',
+          }
+        });
+        
+        if (checkResponse.ok) {
+          const existingFile = await checkResponse.json();
+          sha = existingFile.sha; // File exists, get SHA for update
+        }
+      } catch (checkError) {
+        // File doesn't exist, create new
+      }
+      
+      // Save image file
+      const saveUrl = `https://api.github.com/repos/cyfocube/C_DataBase/contents/${filePath}`;
+      const savePayload = {
+        message: `Add token image for ${contractAddress}`,
+        content: base64Content,
+        branch: 'main'
+      };
+      
+      if (sha) {
+        savePayload.sha = sha; // Include SHA for updates
+      }
+      
+      const saveResponse = await fetch(saveUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(savePayload)
+      });
+      
+      if (saveResponse.ok) {
+        const result = await saveResponse.json();
+        console.log('✅ Image saved to GitHub!');
+        
+        // Return image info object matching the expected format
+        return {
+          fileName: fileName,
+          url: `https://raw.githubusercontent.com/cyfocube/C_DataBase/main/${filePath}`,
+          githubPath: filePath,
+          contractAddress: contractAddress,
+          uploadedAt: new Date().toISOString(),
+          size: Math.round(base64Content.length * 0.75), // Approximate size from base64
+          mimeType: "image/png",
+          originalName: originalFile && originalFile.name ? originalFile.name : "token_image.png"
+        };
+      } else {
+        const errorData = await saveResponse.json();
+        console.error('❌ Failed to save image to GitHub:', saveResponse.status, errorData);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error saving image to GitHub:', error);
+      return null;
+    }
+  };
+
+  const saveTokenToGitHub = async (tokenData) => {
+    try {
+      console.log('🚀 Saving token to GitHub...', tokenData.name, tokenData.symbol);
+      const githubToken = process.env.REACT_APP_GITHUB_TOKEN;
+      const tokenDirectory = isMainnet ? 'Token_mainnet' : 'tokens';
+      const fileName = `${tokenData.contractAddress}.json`;
+      const filePath = `${tokenDirectory}/${fileName}`;
+      const fileContent = JSON.stringify(tokenData, null, 2);
+      
+      console.log('📁 File path:', filePath);
+      
+      // Check if file exists first
+      let sha = null;
+      const checkUrl = `https://api.github.com/repos/cyfocube/C_DataBase/contents/${filePath}`;
+      
+      try {
+        const checkResponse = await fetch(checkUrl, {
+          headers: {
+            'Authorization': `token ${githubToken}`,
+            'Accept': 'application/vnd.github.v3+json',
+          }
+        });
+        
+        if (checkResponse.ok) {
+          const existingFile = await checkResponse.json();
+          sha = existingFile.sha; // File exists, get SHA for update
+        }
+      } catch (checkError) {
+        // File doesn't exist, create new
+      }
+      
+      // Create or update file
+      const saveUrl = `https://api.github.com/repos/cyfocube/C_DataBase/contents/${filePath}`;
+      const savePayload = {
+        message: `Save token data for ${tokenData.name} (${tokenData.symbol})`,
+        content: btoa(fileContent),
+        branch: 'main'
+      };
+      
+      if (sha) {
+        savePayload.sha = sha; // Include SHA for updates
+      }
+      
+      const saveResponse = await fetch(saveUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(savePayload)
+      });
+      
+      if (saveResponse.ok) {
+        const result = await saveResponse.json();
+        console.log('✅ Token data saved to GitHub database!');
+        console.log('📄 File URL:', result.content.html_url);
+        return true;
+      } else {
+        const errorData = await saveResponse.json();
+        console.error('❌ Failed to save token to GitHub:', saveResponse.status, errorData);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error saving token to GitHub:', error);
+      return false;
+    }
+  };
+
   const fetchLaunchedTokens = async () => {
     try {
       setLoadingTokens(true);
-      // Pass network parameter to API
-      const response = await fetch(`/api/tokens/launched?isMainnet=${isMainnet}`);
+      
+      // Try original API first, fallback to GitHub API
+      try {
+        const response = await fetch(`/api/tokens/launched?isMainnet=${isMainnet}`);
+        if (response.ok) {
+          const tokens = await response.json();
+          console.log(`Fetched tokens from API (${isMainnet ? 'mainnet' : 'testnet'}):`, tokens.length, tokens);
+          setLaunchedTokens(tokens);
+          return;
+        }
+      } catch (apiError) {
+        console.log('Original API not available, using GitHub fallback');
+      }
+      
+      // Fallback: Direct GitHub API access to fetch tokens
+      const githubToken = process.env.REACT_APP_GITHUB_TOKEN;
+      const tokenDirectory = isMainnet ? 'Token_mainnet' : 'tokens';
+      const apiUrl = `https://api.github.com/repos/cyfocube/C_DataBase/contents/${tokenDirectory}`;
+      
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Accept': 'application/vnd.github.v3+json',
+        }
+      });
+      
       if (response.ok) {
-        const tokens = await response.json();
-        console.log(`Fetched tokens from API (${isMainnet ? 'mainnet' : 'testnet'}):`, tokens.length, tokens);
+        const files = await response.json();
+        const tokens = [];
+        
+        // Load token data from each JSON file (excluding README.md)
+        for (const file of files) {
+          if (file.name.endsWith('.json') && file.name !== 'README.md') {
+            try {
+              const tokenResponse = await fetch(file.download_url);
+              if (tokenResponse.ok) {
+                const tokenData = await tokenResponse.json();
+                
+                // Construct image URL for tokens that have images in the repository
+                if (tokenData.metadata && tokenData.metadata.hasImage && tokenData.contractAddress) {
+                  const tokenIsMainnet = tokenData.deploymentInfo?.network === 'BSC Mainnet' || tokenData.deploymentInfo?.chainId === 56;
+                  const imageDirectory = tokenIsMainnet ? 'images_mainnet' : 'images';
+                  tokenData.image = `https://raw.githubusercontent.com/cyfocube/C_DataBase/main/${imageDirectory}/${tokenData.contractAddress.toLowerCase().replace('0x', '')}.png`;
+                } else {
+                  tokenData.image = null;
+                }
+                
+                // Ensure we have the symbol property for display
+                if (!tokenData.symbol && tokenData.tokenSymbol) {
+                  tokenData.symbol = tokenData.tokenSymbol;
+                }
+                
+                tokens.push(tokenData);
+              }
+            } catch (fileError) {
+              console.warn('Error loading token file:', file.name, fileError);
+            }
+          }
+        }
+        
+        console.log(`Fetched tokens from GitHub (${tokenDirectory}):`, tokens.length, tokens);
         setLaunchedTokens(tokens);
       } else {
-        console.error('Failed to fetch launched tokens');
-        // Fallback to sample data if API fails
+        console.error('Failed to fetch launched tokens from GitHub');
+        // Fallback to sample data if GitHub API fails
         setLaunchedTokens(sampleTokens);
       }
     } catch (error) {
@@ -5088,8 +5341,8 @@ DO NOT attempt further mainnet deployments until testnet testing is successful.`
     try {
       const chainId = isMainnet ? 56 : 97; // BSC Mainnet : BSC Testnet
       const rpcUrl = isMainnet 
-        ? 'https://bsc-dataseed.binance.org/'
-        : 'https://data-seed-prebsc-1-s1.binance.org:8545/';
+        ? (process.env.REACT_APP_MAINNET_RPC_URL || 'https://bsc-dataseed.binance.org/')
+        : (process.env.REACT_APP_RPC_URL || 'https://bsc-testnet.public.blastapi.io');
       
       const provider = new ethers.JsonRpcProvider(rpcUrl);
       const feeData = await provider.getFeeData();

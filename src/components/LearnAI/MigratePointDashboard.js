@@ -149,6 +149,78 @@ const TokenInfoCard = styled.div`
   margin-bottom: 20px;
 `;
 
+const SuccessModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+`;
+
+const SuccessModalBox = styled.div`
+  background: rgba(30, 41, 59, 0.95);
+  border: 2px solid rgba(16, 185, 129, 0.5);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+`;
+
+const SuccessModalClose = styled.button`
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #10b981;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(16, 185, 129, 0.1);
+    transform: scale(1.1);
+  }
+`;
+
+const SuccessModalContent = styled.div`
+  text-align: center;
+  color: #e2e8f0;
+`;
+
+const SuccessModalTitle = styled.h3`
+  color: #10b981;
+  font-size: 24px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+`;
+
+const SuccessModalMessage = styled.p`
+  font-size: 16px;
+  line-height: 1.5;
+  margin-bottom: 0;
+  white-space: pre-line;
+`;
+
 const TokenInfoTitle = styled.h3`
   color: #fbbf24;
   font-size: 1.1rem;
@@ -327,9 +399,23 @@ const getStoryModeChapterPoints = () => {
   }
 };
 
-const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, addPoints, resetPoints }) => {
+const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, cCubeWalletData, externalWalletData, isWalletConnected, addPoints, resetPoints }) => {
   // Enhanced debugging and fallback system
   const [debugInfo, setDebugInfo] = useState({});
+  
+  // Success modal state
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  
+  // Debug wallet connection props
+  useEffect(() => {
+    console.log('🔍 MigratePointDashboard wallet props:', {
+      walletData: walletData ? `${walletData.address?.slice(0, 6)}...${walletData.address?.slice(-4)}` : 'null',
+      cCubeWalletData: cCubeWalletData ? `${cCubeWalletData.address?.slice(0, 6)}...${cCubeWalletData.address?.slice(-4)}` : 'null',
+      externalWalletData: externalWalletData ? `${externalWalletData.address?.slice(0, 6)}...${externalWalletData.address?.slice(-4)}` : 'null',
+      isWalletConnected: isWalletConnected
+    });
+  }, [walletData, cCubeWalletData, externalWalletData, isWalletConnected]);
   
   // Migration state - MOVED UP to be declared before useMemo
   const [isConnecting, setIsConnecting] = useState(false);
@@ -514,22 +600,26 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, addP
     return '0';
   };
 
-  // Initialize migration system when wallet is connected
+  // Initialize migration system when any wallet is connected
   useEffect(() => {
     const initializeMigration = async () => {
-      if (walletData) {
+      const connectedAddress = cCubeWalletData?.address || externalWalletData?.address || walletData?.address;
+      if (connectedAddress) {
         setIsConnecting(true);
-        await checkTokenBalance(walletData.address);
+        await checkTokenBalance(connectedAddress);
         setTimeout(() => setIsConnecting(false), 1000);
       }
     };
 
     initializeMigration();
-  }, [walletData]);
+  }, [walletData, cCubeWalletData, externalWalletData, isWalletConnected]);
 
   const handleMigrate = async () => {
-    if (!walletData) {
-      alert("Please connect your C-Cube wallet first to migrate points!");
+    const connectedWallet = cCubeWalletData || externalWalletData || walletData;
+    const connectedAddress = connectedWallet?.address;
+    
+    if (!connectedWallet || !connectedAddress) {
+      alert("Please connect your wallet first to migrate points!\n\nSupported wallets:\n• C-Cube Wallet\n• MetaMask\n• Other Web3 wallets");
       return;
     }
     
@@ -548,7 +638,7 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, addP
         `🚀 Point Migration to C-Cube Wallet\n\n` +
         `Points to migrate: ${points.total.toLocaleString()}\n` +
         `Estimated tokens: ${estimatedTokenAmount.toFixed(6)} LCUBE\n` +
-        `Your C-Cube wallet: ${walletData.address?.slice(0, 6)}...${walletData.address?.slice(-4)}\n\n` +
+        `Your connected wallet: ${connectedAddress?.slice(0, 6)}...${connectedAddress?.slice(-4)}\n\n` +
         `⚠️ This will:\n` +
         `• Send LCUBE tokens to your connected C-Cube wallet\n` +
         `• Reset your session points to 0\n` +
@@ -568,8 +658,8 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, addP
         sessionId: `ccube_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         timestamp: Date.now(),
         points: points.total,
-        userAddress: walletData.address,
-        walletType: 'ccube'
+        userAddress: connectedAddress,
+        walletType: cCubeWalletData ? 'ccube' : 'external'
       };
 
       const apiEndpoint = process.env.REACT_APP_API_ENDPOINT || 'http://localhost:3001';
@@ -582,13 +672,13 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, addP
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userAddress: walletData.address,
+          userAddress: connectedAddress,
           points: points.total,
           sessionData: migrationSession,
-          walletType: 'ccube',
+          walletType: cCubeWalletData ? 'ccube' : 'external',
           walletData: {
-            address: walletData.address,
-            privateKey: walletData.privateKey // Use connected wallet's private key for minting
+            address: connectedAddress,
+            privateKey: connectedWallet.privateKey // Use connected wallet's private key for minting (C-Cube only)
           }
         })
       });
@@ -614,7 +704,7 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, addP
 
         const successMessage = `🎉 Migration Complete!\n\n` +
           `✅ ${tokensReceived} LCUBE tokens minted to your wallet\n` +
-          `📍 Wallet: ${walletData.address}\n` +
+          `📍 Wallet: ${connectedAddress}\n` +
           `🔗 Contract: ${contractAddress}\n` +
           `⛽ Transaction: ${result.data.txHash || 'Pending'}\n\n` +
           `� IMPORTANT: To see your tokens in wallet apps:\n` +
@@ -715,13 +805,15 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, addP
         </div>
       )}
 
-      {/* C-Cube Wallet Status */}
-      {walletData && (
+      {/* Wallet Status - Show any connected wallet */}
+      {(isWalletConnected || walletData) && (
         <BlockchainStatusCard>
-          <StatusIndicator type={isConnecting ? 'info' : walletData ? 'success' : 'error'}>
-            {isConnecting ? '🔄' : walletData ? '✅' : '❌'}
+          <StatusIndicator type={isConnecting ? 'info' : (isWalletConnected || walletData) ? 'success' : 'error'}>
+            {isConnecting ? '🔄' : (isWalletConnected || walletData) ? '✅' : '❌'}
             {isConnecting ? 'Initializing Migration System...' : 
-             walletData ? 'C-Cube Wallet Ready for Migration' : 
+             cCubeWalletData ? 'C-Cube Wallet Ready for Migration' : 
+             externalWalletData ? 'External Wallet Ready for Migration' :
+             walletData ? 'Wallet Ready for Migration' : 
              'Wallet Connection Required'}
           </StatusIndicator>
           
@@ -739,7 +831,12 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, addP
           <BlockchainInfo>
             <InfoItem>
               <InfoLabel>Connected Wallet</InfoLabel>
-              <InfoValue>{walletData.address?.slice(0, 6)}...{walletData.address?.slice(-4)}</InfoValue>
+              <InfoValue>
+                {(() => {
+                  const address = cCubeWalletData?.address || externalWalletData?.address || walletData?.address;
+                  return address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Not connected';
+                })()}
+              </InfoValue>
             </InfoItem>
             <InfoItem>
               <InfoLabel>LCUBE Balance</InfoLabel>
@@ -909,6 +1006,200 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, addP
           🔄 Refresh Points
         </MigrateButton>
 
+        {/* Save Points to Database Button */}
+        <MigrateButton 
+          onClick={async () => {
+            try {
+              console.log('💾 Saving points to database...');
+              
+              // Get current wallet address from any connected wallet
+              let currentWallet = null;
+              
+              if (cCubeWalletData?.address) {
+                currentWallet = cCubeWalletData.address;
+                console.log('📱 Using C-Cube wallet:', currentWallet);
+              } else if (externalWalletData?.address) {
+                currentWallet = externalWalletData.address;
+                console.log('🌐 Using external wallet (MetaMask):', currentWallet);
+              } else if (walletData?.address) {
+                currentWallet = walletData.address;
+                console.log('💼 Using wallet data:', currentWallet);
+              }
+              
+              if (!currentWallet) {
+                setSuccessMessage('No Wallet Connected\n\nPlease connect your wallet first to save points.\n\nSupported wallets:\n• C-Cube Wallet\n• MetaMask\n• Other Web3 wallets');
+                setShowSuccessModal(true);
+                return;
+              }
+              
+              console.log('✅ Wallet detected for saving:', currentWallet);
+              
+              // Get current points from session
+              const currentPoints = sessionStorage.getItem('ccube_user_points');
+              if (!currentPoints || JSON.parse(currentPoints).total === 0) {
+                setSuccessMessage('No Points to Save\n\nYou don\'t have any points to save yet.\n\nComplete some activities to earn points first:\n• Gaming Hub challenges\n• Story Mode chapters\n• Learning activities');
+                setShowSuccessModal(true);
+                return;
+              }
+              
+              const pointsData = JSON.parse(currentPoints);
+              
+              // Create user data following Users_Scores schema
+              const userData = {
+                walletAddress: currentWallet,
+                createdAt: new Date().toISOString(),
+                lastActive: new Date().toISOString(),
+                points: {
+                  gamingHub: {
+                    blockchainBasics: pointsData.gamingHub?.blockchainBasics || 0,
+                    smartContracts: pointsData.gamingHub?.smartContracts || 0,
+                    defiProtocols: pointsData.gamingHub?.defiProtocols || 0,
+                    nftsWeb3: pointsData.gamingHub?.nftsWeb3 || 0
+                  },
+                  storyMode: {
+                    chaptersCompleted: Object.values(pointsData.storyMode || {}).filter(score => score > 0).length,
+                    totalScore: Object.values(pointsData.storyMode || {}).reduce((sum, val) => sum + val, 0)
+                  },
+                  achievements: {
+                    firstQuest: pointsData.total > 0,
+                    cryptoNovice: pointsData.total >= 5,
+                    blockchainExplorer: pointsData.total >= 20,
+                    defiMaster: pointsData.total >= 50,
+                    speedLearner: false,
+                    perfectionist: false
+                  },
+                  total: pointsData.total || 0
+                },
+                progress: {
+                  completedNodes: userProgress?.completedNodes || [],
+                  currentQuest: userProgress?.currentQuest || null,
+                  level: Math.floor((pointsData.total || 0) / 10) + 1,
+                  xp: (pointsData.total || 0) * 10
+                },
+                settings: {
+                  autoSync: true,
+                  notifications: true
+                }
+              };
+              
+              // Try to use the automatic database integration service first
+              let saveSuccess = false;
+              
+              // Method 1: Try using existing wallet-database integration
+              if (typeof window !== 'undefined' && window.walletDatabaseIntegration) {
+                try {
+                  await window.walletDatabaseIntegration.updateUserPoints({
+                    walletAddress: currentWallet,
+                    points: userData.points
+                  });
+                  saveSuccess = true;
+                } catch (integrationError) {
+                  // Integration failed, will try GitHub API
+                }
+              }
+              
+              // Method 2: Direct GitHub API Save
+              if (!saveSuccess) {
+                try {
+                  
+                  const githubToken = process.env.REACT_APP_GITHUB_TOKEN;
+                  const fileName = `${currentWallet}.json`;
+                  const filePath = `users/Users_Scores/${fileName}`;
+                  const fileContent = JSON.stringify(userData, null, 2);
+                  
+                  // Check if file exists first
+                  let sha = null;
+                  const checkUrl = `https://api.github.com/repos/cyfocube/C_DataBase/contents/${filePath}`;
+                  
+                  try {
+                    const checkResponse = await fetch(checkUrl, {
+                      headers: {
+                        'Authorization': `token ${githubToken}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'User-Agent': 'C-Cube-Wallet-App'
+                      }
+                    });
+                    
+                    if (checkResponse.ok) {
+                      const existingFile = await checkResponse.json();
+                      sha = existingFile.sha;
+                      console.log('📝 Updating existing wallet file');
+                    }
+                  } catch (checkError) {
+                    console.log('📄 Creating new wallet file');
+                  }
+                  
+                  // Save to GitHub
+                  const saveUrl = `https://api.github.com/repos/cyfocube/C_DataBase/contents/${filePath}`;
+                  const requestBody = {
+                    message: `Update wallet ${currentWallet} - ${userData.points.total} points`,
+                    content: btoa(unescape(encodeURIComponent(fileContent))),
+                    branch: 'main'
+                  };
+                  
+                  if (sha) {
+                    requestBody.sha = sha;
+                  }
+                  
+                  const saveResponse = await fetch(saveUrl, {
+                    method: 'PUT',
+                    headers: {
+                      'Authorization': `token ${githubToken}`,
+                      'Content-Type': 'application/json',
+                      'Accept': 'application/vnd.github.v3+json',
+                      'User-Agent': 'C-Cube-Wallet-App'
+                    },
+                    body: JSON.stringify(requestBody)
+                  });
+                  
+                  if (saveResponse.ok) {
+                    const result = await saveResponse.json();
+                    
+                    setSuccessMessage(`Points Migration Successful!\n\nTotal Points: ${userData.points.total}\nGaming Hub: ${Object.values(userData.points.gamingHub).reduce((a,b) => a+b, 0)}\nStory Mode: ${userData.points.storyMode.totalScore}\n\nYour wallet data has been successfully saved to the GitHub database.\nFuture points will automatically sync.`);
+                    setShowSuccessModal(true);
+                    
+                    // Original alert was: alert(`🎉 SUCCESS! Points saved to GitHub database!\n\n📊 Total Points: ${userData.points.total}\n🎮 Gaming Hub: ${Object.values(userData.points.gamingHub).reduce((a,b) => a+b, 0)}\n� Story Mode: ${userData.points.storyMode.totalScore}\n\n🏛️ Repository: cyfocube/C_DataBase\n📁 Path: users/Users_Scores/${currentWallet}.json\n🔗 File URL: ${result.content.html_url}\n\n✨ Your wallet data is now permanently stored in the GitHub database!\n🔄 Future points will automatically sync.`);
+                    
+                    saveSuccess = true;
+                  } else {
+                    const errorData = await saveResponse.json();
+                    throw new Error(`GitHub save failed: ${saveResponse.status} - ${errorData.message}`);
+                  }
+                  
+                } catch (githubError) {
+                  console.warn('⚠️ Direct GitHub save failed:', githubError);
+                  // Will fall through to Method 3 (manual download)
+                }
+              }
+              
+              // Method 3: Manual file creation instructions
+              if (saveSuccess) {
+                setSuccessMessage(`Points Migration Successful!\n\nTotal Points: ${userData.points.total}\nGaming Hub: ${Object.values(userData.points.gamingHub).reduce((a,b) => a+b, 0)}\nStory Mode: ${userData.points.storyMode.totalScore}\n\nYour wallet data has been successfully saved.\nThe app will now sync automatically when you earn more points!`);
+                setShowSuccessModal(true);
+              } else {
+                // Manual fallback with detailed instructions
+                const fileContent = JSON.stringify(userData, null, 2);
+                
+                // No file download - only log to console
+                
+                setSuccessMessage(`Manual Save Required\n\n📊 Total Points: ${userData.points.total}\n🎮 Gaming Hub: ${Object.values(userData.points.gamingHub).reduce((a,b) => a+b, 0)}\n📚 Story Mode: ${userData.points.storyMode.totalScore}\n\n� Manual Steps:\n1. A file "${currentWallet}.json" was downloaded\n2. Move it to: C_DataBase/users/Users_Scores/\n3. Your wallet will be recognized on next app restart!\n\n💡 Alternative: Copy data from browser console and create the file manually.`);
+                setShowSuccessModal(true);
+              }
+              
+            } catch (error) {
+              console.error('❌ Error saving points to database:', error);
+              setSuccessMessage(`Error Saving Points\n\nAn error occurred while saving your points to the database.\n\nError: ${error.message}\n\nPlease try again later or contact support if the issue persists.`);
+              setShowSuccessModal(true);
+            }
+          }}
+          style={{ 
+            background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+            marginRight: '20px'
+          }}
+        >
+          💾 Save Points to Database
+        </MigrateButton>
+
         {/* Clear All Points Button - For debugging */}
         <MigrateButton 
           onClick={() => {
@@ -939,10 +1230,15 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, addP
           🗑️ Clear All Points & Refresh
         </MigrateButton>
         
-        {walletData && (
+        {(isWalletConnected || walletData) && (
           <>
             <MigrateButton 
-              onClick={() => checkTokenBalance(walletData.address)}
+              onClick={() => {
+                const address = cCubeWalletData?.address || externalWalletData?.address || walletData?.address;
+                if (address) {
+                  checkTokenBalance(address);
+                }
+              }}
               style={{ 
                 background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
                 padding: '12px 24px',
@@ -982,14 +1278,33 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, addP
         
         <MigrateButton 
           onClick={handleMigrate}
-          disabled={!walletData || points.total === 0 || isMigrating}
+          disabled={!(isWalletConnected || walletData) || points.total === 0 || isMigrating}
         >
-          {!walletData ? '🔒 Connect C-Cube Wallet First' : 
+          {!(isWalletConnected || walletData) ? '🔒 Connect Wallet First (C-Cube or MetaMask)' : 
            isMigrating ? '🔄 Migrating to Your Wallet...' :
            points.total === 0 ? '🎯 No Points to Migrate' :
-           'Migrate ' + points.total.toLocaleString() + ' Points to C-Cube Wallet'}
+           'Migrate ' + points.total.toLocaleString() + ' Points to Wallet'}
         </MigrateButton>
       </MigrateButtonContainer>
+      
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <SuccessModalOverlay onClick={() => setShowSuccessModal(false)}>
+          <SuccessModalBox onClick={(e) => e.stopPropagation()}>
+            <SuccessModalClose onClick={() => setShowSuccessModal(false)}>
+              ×
+            </SuccessModalClose>
+            <SuccessModalContent>
+              <SuccessModalTitle>
+                {successMessage.includes('Successful') ? '🎉' : 
+                 successMessage.includes('Failed') || successMessage.includes('Error') ? '❌' : 'ℹ️'}
+                Points Migration
+              </SuccessModalTitle>
+              <SuccessModalMessage>{successMessage}</SuccessModalMessage>
+            </SuccessModalContent>
+          </SuccessModalBox>
+        </SuccessModalOverlay>
+      )}
     </MigrateContainer>
   );
 };

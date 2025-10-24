@@ -633,7 +633,10 @@ const SelectorButton = styled.button`
         <CurrentComponent 
           userProgress={userProgress}
           setUserProgress={setUserProgress}
-          walletData={cCubeWalletData}
+          walletData={cCubeWalletConnected ? cCubeWalletData : externalWalletConnected ? externalWalletData : null}
+          cCubeWalletData={cCubeWalletData}
+          externalWalletData={externalWalletData}
+          isWalletConnected={cCubeWalletConnected || externalWalletConnected}
           addPoints={addPoints}
           resetPoints={resetPoints}
           onWalletSetupRequest={() => setShowWalletSetup(true)}

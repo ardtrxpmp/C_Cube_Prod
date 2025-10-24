@@ -127,7 +127,7 @@ async function saveTokenToGitHub(tokenData) {
         if (tokenData.tokenImage) {
             const imageFileName = `${contractAddress}.png`;
             // Route to correct image folder based on network
-            const imagesFolder = tokenData.isMainnet ? 'Image_mainnet' : 'images';
+            const imagesFolder = tokenData.isMainnet ? 'images_mainnet' : 'images';
             const imageUrl = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${imagesFolder}/${imageFileName}`;
             
             completeTokenData.image = {
@@ -218,7 +218,7 @@ async function saveTokenImageToGitHub(imageData, contractAddress, isMainnet = fa
     const REPO_OWNER = 'cyfocube';
     const REPO_NAME = 'C_DataBase';
     // Route to correct image folder based on network
-    const imagesFolder = isMainnet ? 'Image_mainnet' : 'images';
+    const imagesFolder = isMainnet ? 'images_mainnet' : 'images';
     const IMAGE_PATH = `${imagesFolder}/${contractAddress}.png`;
 
     try {

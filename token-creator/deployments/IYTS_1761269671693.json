@@ -1,0 +1,18 @@
+{
+  "contractAddress": "0x6E224CAD358B34F03693C5607AeE394a06fBEF92",
+  "transactionHash": "0x169ae139d02e4f0399b8fc8b57093dc0cceacdded236fb081c2aed11690a28c1",
+  "tokenName": "IYTS",
+  "tokenSymbol": "IYTS",
+  "decimals": 18,
+  "initialSupply": "10000",
+  "ownerAddress": "0x388211c545b25B69cf03bBc1EE897076ca2f944D",
+  "network": "BSC Mainnet",
+  "chainId": 56,
+  "deployedAt": "2025-10-24T01:34:31.693Z",
+  "explorerUrl": "https://bscscan.com/address/0x6E224CAD358B34F03693C5607AeE394a06fBEF92",
+  "description": "The king of the blockchain jungle. This regal crypto lion embodies leadership, courage, and dominance in the DeFi ecosystem. Join the pride and rule the crypto savanna.\n",
+  "website": "twitter.com",
+  "twitter": "twitter.com",
+  "telegram": "twitter.com",
+  "tokenImage": null
+}
