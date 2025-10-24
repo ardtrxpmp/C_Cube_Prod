@@ -746,8 +746,8 @@ const FeedbackMessage = styled.div`
 `;
 
 const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
-  // Wallet integration
-  const { walletAddress, isConnected } = useWallet();
+  // Wallet integration and scores
+  const { walletAddress, isConnected, walletScores, walletScoresLoading } = useWallet();
   
   // Existing state
   const [activeQuest, setActiveQuest] = useState(null);
@@ -1724,16 +1724,31 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
   const xpForNextLevel = playerLevel * 100;
   const xpProgress = (playerXP % 100);
 
-  // Calculate actual gaming hub points for display (should match migrate points)
+  // Calculate actual gaming hub points combining session storage and wallet database
   const calculateGamingHubPoints = () => {
     try {
+      let sessionPoints = 0;
+      let databasePoints = 0;
+      
+      // Get session storage points
       const savedPoints = sessionStorage.getItem('ccube_user_points');
       if (savedPoints) {
         const pointsData = JSON.parse(savedPoints);
         if (pointsData.gamingHub) {
-          return Object.values(pointsData.gamingHub).reduce((sum, val) => sum + val, 0);
+          sessionPoints = Object.values(pointsData.gamingHub).reduce((sum, val) => sum + val, 0);
         }
       }
+      
+      // Get database points from wallet
+      if (walletScores?.points?.gamingHub) {
+        databasePoints = Object.values(walletScores.points.gamingHub).reduce((sum, val) => sum + val, 0);
+      }
+      
+      // Return the higher value (to show best progress)
+      const totalPoints = Math.max(sessionPoints, databasePoints);
+      
+      console.log(`🎮 Gaming Hub Points: Session=${sessionPoints}, Database=${databasePoints}, Total=${totalPoints}`);
+      return totalPoints;
     } catch (e) {
       console.error('Error reading gaming hub points:', e);
     }
@@ -1782,6 +1797,19 @@ const GamifiedLearningHub = ({ userProgress, setUserProgress, addPoints }) => {
           <StatItem>
             <StatValue color="#10b981">{quests.filter(q => q.completed).length}/{quests.length}</StatValue>
             <StatLabel>Quests Complete</StatLabel>
+          </StatItem>
+          <StatItem>
+            <StatValue color={walletScores ? "#10b981" : "#f59e0b"}>
+              {walletScoresLoading ? '⏳' : walletScores ? '🏦' : '📱'}
+            </StatValue>
+            <StatLabel>
+              {walletScoresLoading 
+                ? 'Loading...' 
+                : walletScores 
+                  ? 'Database'
+                  : 'Session'
+              }
+            </StatLabel>
           </StatItem>
         </PlayerStats>
         

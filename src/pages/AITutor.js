@@ -464,24 +464,19 @@ const AITutor = ({ onNavigate }) => {
           method: 'eth_requestAccounts' 
         });
         
-        if (accounts.length > 0) {
-          const signer = await provider.getSigner();
-          const address = await signer.getAddress();
-          const network = await provider.getNetwork();
-          
-          const walletData = {
-            address: address,
-            provider: 'MetaMask',
-            chainId: network.chainId.toString(),
-            balance: await provider.getBalance(address)
-          };
-          
-          // Use global context to connect external wallet
-          await connectExternalWallet(walletData);
-          setShowWalletModal(false);
-          
-          console.log('MetaMask connected successfully');
+        if (!accounts || accounts.length === 0) {
+          throw new Error('No accounts found. Please make sure MetaMask is unlocked.');
         }
+        
+        const signer = await provider.getSigner();
+        const address = await signer.getAddress();
+        const balance = await provider.getBalance(address);
+        
+        // Use global context to connect external wallet
+        await connectExternalWallet();
+        setShowWalletModal(false);
+        
+        console.log('MetaMask connected successfully');
       } else {
         alert('MetaMask not detected. Please install MetaMask extension.');
       }
@@ -489,6 +484,8 @@ const AITutor = ({ onNavigate }) => {
       console.error('Error connecting MetaMask:', error);
       if (error.code === 4001) {
         console.log('User rejected the connection request');
+      } else {
+        alert('Failed to connect to MetaMask: ' + (error.message || 'Unknown error'));
       }
     }
   };
@@ -514,24 +511,19 @@ const AITutor = ({ onNavigate }) => {
           method: 'eth_requestAccounts' 
         });
         
-        if (accounts.length > 0) {
-          const signer = await provider.getSigner();
-          const address = await signer.getAddress();
-          const network = await provider.getNetwork();
-          
-          const walletData = {
-            address: address,
-            provider: 'Trust Wallet',
-            chainId: network.chainId.toString(),
-            balance: await provider.getBalance(address)
-          };
-          
-          // Use global context to connect external wallet
-          await connectExternalWallet(walletData);
-          setShowWalletModal(false);
-          
-          console.log('Trust Wallet connected successfully');
+        if (!accounts || accounts.length === 0) {
+          throw new Error('No accounts found. Please make sure Trust Wallet is unlocked.');
         }
+        
+        const signer = await provider.getSigner();
+        const address = await signer.getAddress();
+        const balance = await provider.getBalance(address);
+        
+        // Use global context to connect external wallet
+        await connectExternalWallet();
+        setShowWalletModal(false);
+        
+        console.log('Trust Wallet connected successfully');
       } else {
         alert('Trust Wallet not detected. Please use Trust Wallet browser or install Trust Wallet.');
       }
@@ -539,6 +531,8 @@ const AITutor = ({ onNavigate }) => {
       console.error('Error connecting Trust Wallet:', error);
       if (error.code === 4001) {
         console.log('User rejected the connection request');
+      } else {
+        alert('Failed to connect to Trust Wallet: ' + (error.message || 'Unknown error'));
       }
     }
   };
