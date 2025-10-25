@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { useWallet } from '../../context/WalletContext';
 
+// Animation keyframes
 const fadeIn = keyframes`
   0% { opacity: 0; transform: translateY(20px); }
   100% { opacity: 1; transform: translateY(0); }
@@ -13,7 +14,8 @@ const glowPulse = keyframes`
   100% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.5); }
 `;
 
-const MigrateContainer = styled.div`
+// Main container for the migrate points dashboard
+const MigrateMainContainer = styled.div`
   width: 100%;
   height: 100%;
   background: linear-gradient(135deg, #0f0f23, #1a1a2e);
@@ -802,7 +804,7 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, cCub
 
 
   return (
-    <MigrateContainer>
+    <MigrateMainContainer>
       <DashboardHeader>
         <DashboardTitle>🔄 Migrate Points Dashboard</DashboardTitle>
         <DashboardSubtitle>
@@ -1459,7 +1461,7 @@ const MigratePointDashboard = ({ userProgress, setUserProgress, walletData, cCub
           </SuccessModalBox>
         </SuccessModalOverlay>
       )}
-    </MigrateContainer>
+    </MigrateMainContainer>
   );
 };
 

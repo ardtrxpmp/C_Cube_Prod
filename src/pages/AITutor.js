@@ -14,7 +14,7 @@ const AITutorContainer = styled.div`
   position: relative;
   overflow: hidden;
   color: #e0e0e0;
-  padding-top: 180px;
+  padding-top: 0;
   
   &::before {
     content: '';
@@ -47,14 +47,14 @@ const AIContent = styled.div`
 const MainContent = styled.div`
   flex: 1;
   width: 100%;
-  height: calc(100vh - 100px);
-  padding: 30px 0 0 0;
+  height: 100vh;
+  padding: 0;
   margin: 0;
+  margin-top: 40px;
   background: transparent;
   position: relative;
   overflow: hidden;
   border-radius: 0;
-  margin-top: 0;
   
   @media (max-width: 768px) {
     width: 100%;
@@ -372,17 +372,17 @@ const AITutor = ({ onNavigate }) => {
   // Interface options for the header menu
   const interfaces = useMemo(() => {
     const baseInterfaces = [
-      { id: 'enhanced-chat', name: 'Assistant' },
+      { id: 'enhanced-chat', name: 'Collaborate' },
       { id: 'gamified-hub', name: 'Gaming Hub' },
-      { id: 'story-mode', name: 'Story Mode' },
-      { id: 'dashboard', name: 'Dashboard' }
+      { id: 'story-mode', name: 'Story Mode' }
+      // Dashboard hidden but functionality preserved
     ];
 
     // Conditionally add migrate points interface when any wallet is connected
     return (cCubeWalletConnected || externalWalletConnected) ? [
-      ...baseInterfaces.slice(0, 3), // Assistant, Gaming Hub, Story Mode
-      { id: 'migrate-points', name: 'Migrate Points' },
-      ...baseInterfaces.slice(3) // Dashboard
+      ...baseInterfaces, // Collaborate, Gaming Hub, Story Mode
+      { id: 'migrate-points', name: 'Migrate Points' }
+      // Dashboard not shown in menu but still accessible programmatically
     ] : baseInterfaces;
   }, [cCubeWalletConnected, externalWalletConnected]);
 
