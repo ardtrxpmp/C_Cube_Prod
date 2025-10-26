@@ -41,8 +41,12 @@ class QAService {
       for (const questionId of questionIds) {
         const questionPath = path.join(this.questionsPath, `${questionId}.json`);
         if (fs.existsSync(questionPath)) {
-          const question = JSON.parse(fs.readFileSync(questionPath, 'utf8'));
-          questions.push(question);
+          try {
+            const question = JSON.parse(fs.readFileSync(questionPath, 'utf8'));
+            questions.push(question);
+          } catch (error) {
+            console.warn(`Skipping corrupted question file: ${questionId}.json - ${error.message}`);
+          }
         }
       }
 

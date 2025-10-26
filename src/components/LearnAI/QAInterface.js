@@ -45,6 +45,7 @@ const MainContent = styled.div`
   flex-direction: column;
   overflow-y: auto;
   padding: 25px 30px 15px 30px;
+  background: rgba(20, 20, 25, 0.6);
   
   &::-webkit-scrollbar {
     width: 6px;
@@ -84,9 +85,13 @@ const RightSidebar = styled.div`
 
 // Header Components
 const QAHeader = styled.div`
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 15px;
+  margin-top: 20px;
   animation: ${fadeIn} 1s ease-out;
+  height: fit-content;
 `;
 
 const QATitle = styled.h1`
@@ -135,14 +140,18 @@ const CategoryItem = styled.div`
 `;
 
 const SearchContainer = styled.div`
-  margin-bottom: 20px;
+  margin-bottom: 0;
+  width: 45%;
+  text-align: left;
+  display: flex;
+  align-items: center;
 `;
 
 const SearchInput = styled.input`
   width: 100%;
-  padding: 12px 16px;
+  padding: 8px 16px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: none;
   border-radius: 8px;
   color: #e2e8f0;
   font-size: 0.9rem;
@@ -161,25 +170,26 @@ const SearchInput = styled.input`
 
 // Question and Answer Components
 const QuestionCard = styled.div`
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 20px;
-  transition: all 0.3s ease;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+  cursor: pointer;
   animation: ${fadeIn} 0.8s ease-out;
   
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(16, 185, 129, 0.05);
+    border-bottom-color: rgba(16, 185, 129, 0.3);
+  }
+  
+  &:last-child {
+    border-bottom: none;
   }
 `;
 
 const QuestionTitle = styled.h3`
   color: #10b981;
-  font-size: 1.3rem;
-  margin-bottom: 16px;
+  font-size: 1.1rem;
+  margin-bottom: 12px;
   line-height: 1.4;
 `;
 
@@ -194,35 +204,50 @@ const QuestionMeta = styled.div`
 const MetaTag = styled.span`
   background: rgba(16, 185, 129, 0.1);
   color: #10b981;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 0.8rem;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
   font-weight: 600;
 `;
 
 const QuestionStats = styled.div`
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   color: #64748b;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
+`;
+
+const QuestionAuthor = styled.div`
+  color: #3b82f6;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  display: inline-block;
+  width: fit-content;
 `;
 
 const QuestionContent = styled.div`
   color: #e2e8f0;
-  font-size: 1rem;
-  line-height: 1.6;
-  margin-bottom: 20px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 16px;
 `;
 
 const AnswerSection = styled.div`
   margin-top: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 20px;
+  background: rgba(20, 20, 25, 0.6);
+  padding: 20px;
+  border-radius: 8px;
 `;
 
 const AnswerCard = styled.div`
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(20, 20, 25, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   padding: 20px;
@@ -230,7 +255,7 @@ const AnswerCard = styled.div`
   transition: all 0.3s ease;
   
   &:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(20, 20, 25, 0.8);
     border-color: rgba(16, 185, 129, 0.2);
   }
 `;
@@ -243,9 +268,15 @@ const AnswerAuthor = styled.div`
 `;
 
 const AuthorName = styled.span`
-  color: #10b981;
+  color: #3b82f6;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  display: inline-block;
+  width: fit-content;
 `;
 
 const AuthorBadge = styled.span`
@@ -259,8 +290,8 @@ const AuthorBadge = styled.span`
 
 const AnswerContent = styled.div`
   color: #e2e8f0;
-  line-height: 1.6;
-  font-size: 0.95rem;
+  line-height: 1.5;
+  font-size: 0.85rem;
 `;
 
 const AnswerActions = styled.div`
@@ -282,9 +313,9 @@ const VoteButton = styled.button`
   background: none;
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #64748b;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -306,6 +337,46 @@ const VoteButton = styled.button`
 const AnswerTime = styled.span`
   color: #64748b;
   font-size: 0.8rem;
+`;
+
+// Filter Menu Components
+const FilterMenuContainer = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0;
+  align-items: center;
+`;
+
+const FilterMenu = styled.div`
+  display: flex;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+`;
+
+const FilterOption = styled.button`
+  background: ${props => props.children === 'Ask Question' ? '#3b82f6' : 'none'};
+  border: none;
+  color: ${props => props.children === 'Ask Question' ? 'white' : '#64748b'};
+  padding: 8px 16px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  
+  &:last-child {
+    border-right: none;
+  }
+  
+  &:hover {
+    background: ${props => props.children === 'Ask Question' ? '#2563eb' : 'rgba(255, 255, 255, 0.05)'};
+    color: ${props => props.children === 'Ask Question' ? 'white' : '#e2e8f0'};
+  }
+  
+  &.active {
+    background: ${props => props.children === 'Ask Question' ? '#3b82f6' : 'rgba(16, 185, 129, 0.1)'};
+    color: ${props => props.children === 'Ask Question' ? 'white' : '#10b981'};
+  }
 `;
 
 // Sample data
@@ -349,34 +420,17 @@ const sampleQuestions = [
   }
 ];
 
-const sampleAnswers = [
-  {
-    id: 'ans1',
-    questionId: 'q1',
-    author: 'zkProtocolExpert',
-    badge: 'zkEVM Core Dev',
-    content: 'For $50M daily volume, I\'d recommend **Polygon zkEVM** or **Arbitrum One**. Based on our migration analysis:\\n\\n**Polygon zkEVM:**\\n- Gas costs: ~95% savings vs mainnet\\n- Finality: 30-45 minutes (proof generation)\\n- Security: Ethereum-equivalent through validity proofs\\n- Tooling: Full EVM compatibility\\n\\n**Arbitrum One:**\\n- Gas costs: ~90% savings vs mainnet\\n- Finality: 7 days (challenge period)\\n- Security: Fraud proofs with 7-day delay\\n- Liquidity: Largest TVL among L2s\\n\\nFor your volume, zkEVM offers better long-term security guarantees.',
-    votes: 89,
-    timestamp: '2024-10-25T02:15:00Z'
-  },
-  {
-    id: 'ans2', 
-    questionId: 'q1',
-    author: 'L2SecurityAuditor',
-    badge: 'Smart Contract Auditor',
-    content: 'Consider **Optimism** for your use case. Their recent Bedrock upgrade significantly improved gas efficiency:\\n\\n- **Data availability costs**: 10x reduction\\n- **Execution costs**: Native EVM opcodes\\n- **Sequencer decentralization**: Roadmap for multiple sequencers\\n- **Superchain vision**: Shared security across OP Stack chains\\n\\nFor DeFi specifically, Optimism\'s retro funding model attracts high-quality protocols.',
-    votes: 67,
-    timestamp: '2024-10-25T03:30:00Z'
-  }
-];
 
 const QAInterface = ({ userProgress, setUserProgress }) => {
   // State management
   const [selectedCategory, setSelectedCategory] = useState('All Questions');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedQuestion, setSelectedQuestion] = useState(null);
-  const [questions, setQuestions] = useState(sampleQuestions);
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingAnswers, setLoadingAnswers] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('Newest');
 
   // Q&A Functions
   const filteredQuestions = questions.filter(question => {
@@ -386,15 +440,24 @@ const QAInterface = ({ userProgress, setUserProgress }) => {
       question.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
       question.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
     return categoryMatch && searchMatch;
+  }).sort((a, b) => {
+    switch (activeFilter) {
+      case 'Newest':
+        return new Date(b.created_at || b.created) - new Date(a.created_at || a.created);
+      case 'Active':
+        return new Date(b.last_activity || b.updated_at || b.created_at) - new Date(a.last_activity || a.updated_at || a.created_at);
+      case 'Unanswered':
+        return (a.answer_count || 0) - (b.answer_count || 0);
+      default:
+        return 0;
+    }
   });
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
   };
 
-  const handleQuestionSelect = (question) => {
-    setSelectedQuestion(question);
-  };
+
 
   const formatTimeAgo = (timestamp) => {
     const now = new Date();
@@ -411,11 +474,29 @@ const QAInterface = ({ userProgress, setUserProgress }) => {
     const loadQuestions = async () => {
       setLoading(true);
       try {
-        // In production: load from qa-system/questions/
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setQuestions(sampleQuestions);
+        // Load from real API
+        const response = await fetch('/api/qa/questions');
+        const data = await response.json();
+        
+        console.log('API Response:', data);
+        if (data.success) {
+          console.log('Loading questions:', data.data.length, 'questions found');
+          // Add debugging for vote data
+          data.data.forEach((q, i) => {
+            if (typeof q.votes === 'object') {
+              console.warn(`Question ${i} has object votes:`, q.votes);
+            }
+          });
+          setQuestions(data.data);
+        } else {
+          console.error('Failed to load questions:', data.error);
+          // Keep empty array if API fails
+          setQuestions([]);
+        }
       } catch (error) {
         console.error('Failed to load questions:', error);
+        // Keep empty array if API fails
+        setQuestions([]);
       } finally {
         setLoading(false);
       }
@@ -424,22 +505,52 @@ const QAInterface = ({ userProgress, setUserProgress }) => {
     loadQuestions();
   }, []);
 
+  // Load answers for selected question
+  const loadAnswers = async (questionId) => {
+    setLoadingAnswers(true);
+    try {
+      const response = await fetch(`/api/qa/questions/${questionId}/answers`);
+      const data = await response.json();
+      
+      if (data.success) {
+        // Add debugging for answer vote data
+        data.data.forEach((a, i) => {
+          if (typeof a.votes === 'object') {
+            console.warn(`Answer ${i} has object votes:`, a.votes);
+          }
+        });
+        setAnswers(data.data);
+      } else {
+        console.error('Failed to load answers:', data.error);
+        // No fallback - show empty state
+        setAnswers([]);
+      }
+    } catch (error) {
+      console.error('Failed to load answers:', error);
+      // No fallback - show empty state
+      setAnswers([]);
+    } finally {
+      setLoadingAnswers(false);
+    }
+  };
+
+  // Handle question selection - toggle if same question clicked
+  const handleQuestionSelect = (question) => {
+    if (selectedQuestion && selectedQuestion.id === question.id) {
+      // If clicking the same question, collapse it
+      setSelectedQuestion(null);
+      setAnswers([]);
+    } else {
+      // If clicking a different question, expand it
+      setSelectedQuestion(question);
+      loadAnswers(question.id);
+    }
+  };
+
   return (
     <QAContainer>
       {/* Left Sidebar - Categories & Search */}
       <LeftSidebar>
-        <SidebarSection>
-          <SidebarTitle>Search</SidebarTitle>
-          <SearchContainer>
-            <SearchInput
-              type="text"
-              placeholder="Search questions..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </SearchContainer>
-        </SidebarSection>
-
         <SidebarSection>
           <SidebarTitle>Categories</SidebarTitle>
           {sampleCategories.map((category, index) => (
@@ -457,31 +568,49 @@ const QAInterface = ({ userProgress, setUserProgress }) => {
       {/* Main Content Area */}
       <MainContent>
         <QAHeader>
-          <QATitle>Blockchain Q&A Hub</QATitle>
-          <QASubtitle>
-            Expert answers to complex blockchain questions • {filteredQuestions.length} questions available
-          </QASubtitle>
+          <SearchContainer>
+            <SearchInput
+              type="text"
+              placeholder="Search questions..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </SearchContainer>
+          
+          <FilterMenuContainer>
+            <FilterMenu>
+              {['Newest', 'Active', 'Unanswered', 'Ask Question'].map((filter) => (
+                <FilterOption
+                  key={filter}
+                  className={activeFilter === filter ? 'active' : ''}
+                  onClick={() => setActiveFilter(filter)}
+                >
+                  {filter}
+                </FilterOption>
+              ))}
+            </FilterMenu>
+          </FilterMenuContainer>
         </QAHeader>
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
             Loading questions...
           </div>
+        ) : filteredQuestions.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+            No questions found. API Status: {questions.length} total questions loaded.
+            <br />
+            <button onClick={() => window.location.reload()} style={{ marginTop: '10px', padding: '8px 16px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+              Reload Page
+            </button>
+          </div>
         ) : (
           filteredQuestions.map((question) => (
             <QuestionCard key={question.id} onClick={() => handleQuestionSelect(question)}>
-              <QuestionMeta>
-                {question.tags.map((tag, index) => (
-                  <MetaTag key={index}>{tag}</MetaTag>
-                ))}
-                <QuestionStats>
-                  <span>👁 {question.views.toLocaleString()} views</span>
-                  <span>👍 {question.votes} votes</span>
-                  <span>💬 {question.answers} answers</span>
-                  <span>⏰ {formatTimeAgo(question.created)}</span>
-                </QuestionStats>
-              </QuestionMeta>
-
+              <QuestionAuthor>
+                👤 {question.author_name || 'Anonymous'}
+              </QuestionAuthor>
+              
               <QuestionTitle>{question.title}</QuestionTitle>
               
               <QuestionContent>
@@ -491,33 +620,53 @@ const QAInterface = ({ userProgress, setUserProgress }) => {
                 }
               </QuestionContent>
 
-              {/* Sample answers for demonstration */}
-              {question.id === 'q1' && (
-                <AnswerSection>
-                  <h4 style={{ color: '#10b981', marginBottom: '16px' }}>Top Answers:</h4>
-                  {sampleAnswers.filter(ans => ans.questionId === 'q1').map((answer) => (
-                    <AnswerCard key={answer.id}>
-                      <AnswerAuthor>
-                        <AuthorName>{answer.author}</AuthorName>
-                        <AuthorBadge>{answer.badge}</AuthorBadge>
-                      </AnswerAuthor>
-                      
-                      <AnswerContent>
-                        {answer.content.split('\\n').map((line, i) => (
-                          <div key={i}>{line}</div>
-                        ))}
-                      </AnswerContent>
+              <QuestionMeta>
+                {question.tags.map((tag, index) => (
+                  <MetaTag key={index}>{tag}</MetaTag>
+                ))}
+                <QuestionStats>
+                  <span>👁 {question.views?.toLocaleString() || 0} views</span>
+                  <span>👍 {typeof question.votes === 'object' ? 0 : (question.votes || 0)} votes</span>
+                  <span>💬 {question.answer_count || 0} answers</span>
+                  <span>⏰ {formatTimeAgo(question.created_at || question.created)}</span>
+                </QuestionStats>
+              </QuestionMeta>
 
-                      <AnswerActions>
-                        <VoteButtons>
-                          <VoteButton>👍 {answer.votes}</VoteButton>
-                          <VoteButton>💬 Reply</VoteButton>
-                          <VoteButton>📚 Save</VoteButton>
-                        </VoteButtons>
-                        <AnswerTime>{formatTimeAgo(answer.timestamp)}</AnswerTime>
-                      </AnswerActions>
-                    </AnswerCard>
-                  ))}
+              {/* Real answers from database */}
+              {selectedQuestion && question.id === selectedQuestion.id && (
+                <AnswerSection>
+                  <h4 style={{ color: '#10b981', marginBottom: '16px' }}>
+                    Top Answers {loadingAnswers ? '(Loading...)' : `(${answers.length})`}:
+                  </h4>
+                  {loadingAnswers ? (
+                    <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
+                      Loading answers...
+                    </div>
+                  ) : (
+                    answers.map((answer) => (
+                      <AnswerCard key={answer.id}>
+                        <AnswerAuthor>
+                          <AuthorName>👤 {answer.author_name || answer.author}</AuthorName>
+                          <AuthorBadge>{answer.is_accepted ? '✅ Accepted' : 'Community Member'}</AuthorBadge>
+                        </AnswerAuthor>
+                        
+                        <AnswerContent>
+                          {(answer.content || '').split('\n').map((line, i) => (
+                            <div key={i}>{String(line)}</div>
+                          ))}
+                        </AnswerContent>
+
+                        <AnswerActions>
+                          <VoteButtons>
+                            <VoteButton>👍 {typeof answer.votes === 'object' ? 0 : (answer.votes || 0)}</VoteButton>
+                            <VoteButton>💬 Reply</VoteButton>
+                            <VoteButton>📚 Save</VoteButton>
+                          </VoteButtons>
+                          <AnswerTime>{formatTimeAgo(answer.created_at || answer.timestamp)}</AnswerTime>
+                        </AnswerActions>
+                      </AnswerCard>
+                    ))
+                  )}
                 </AnswerSection>
               )}
             </QuestionCard>

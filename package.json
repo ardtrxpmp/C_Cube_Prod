@@ -8,7 +8,7 @@
     "start-web": "react-scripts start",
     "react-start": "react-scripts start",
     "server": "node server.js",
-    "dev": "concurrently \"npm run server\" \"PORT=3002 npm run react-start\"",
+    "dev": "concurrently \"npm run server\" \"PORT=3004 npm run react-start\"",
     "react-build": "react-scripts build",
     "react-test": "react-scripts test",
     "react-eject": "react-scripts eject",
